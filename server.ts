@@ -597,7 +597,72 @@ Return ONLY the transcription text. Do not add explanations, conversational comm
     }
   });
 
-  // 5. API: SMART PORTFOLIO RECOMMENDER / AUDIT
+  // 9. API: REAL-TIME MULTI-LANGUAGE TRANSLATION
+  app.post('/api/translate', async (req, res) => {
+    const { text, targetLang, targetLangName } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Missing text to translate' });
+    }
+
+    if (!targetLang || targetLang === 'en') {
+      return res.json({ translatedText: text, sourceText: text, targetLang: 'en' });
+    }
+
+    const languageMap: Record<string, string> = {
+      sn: 'chiShona (Shona, Bantu language of Zimbabwe)',
+      nd: 'isiNdebele (Northern Ndebele, Nguni language of Zimbabwe and Southern Africa)',
+      fr: 'French (Français)',
+      zh: 'Simplified Chinese (Mandarin / 中文)',
+      ar: 'Modern Standard Arabic (العربية)'
+    };
+
+    const targetDesc = languageMap[targetLang] || targetLangName || targetLang;
+
+    if (!ai) {
+      return res.json({
+        translatedText: text,
+        sourceText: text,
+        targetLang,
+        isFallback: true
+      });
+    }
+
+    try {
+      const prompt = `You are a certified professional multilingual interview translator.
+Translate the following response representing a candidate in a job interview into ${targetDesc}.
+Guidelines:
+- Maintain natural, professional phrasing, exact technical accuracy, and respectful tone.
+- Preserve proper names (e.g. AWS, Netflix, Kaitana, candidate names).
+- Return ONLY the translated string without commentary, quotation marks, or notes.
+
+Text to translate:
+"""
+${text}
+"""`;
+
+      const response = await generateWithModelFallback(ai, {
+        contents: prompt
+      });
+
+      const translated = response.text?.trim() || text;
+      return res.json({
+        translatedText: translated,
+        sourceText: text,
+        targetLang
+      });
+    } catch (err: any) {
+      console.error('Translation error in /api/translate:', err);
+      return res.json({
+        translatedText: text,
+        sourceText: text,
+        targetLang,
+        error: err.message
+      });
+    }
+  });
+
+  // 10. API: SMART PORTFOLIO RECOMMENDER / AUDIT
   app.post('/api/audit', async (req, res) => {
     const { profileName, skills, files, projects } = req.body;
 

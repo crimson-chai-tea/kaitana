@@ -91,10 +91,23 @@ export interface MediaRetrievalResult {
   images: MediaImage[];
 }
 
+export type SupportedTtsLanguage = 'en' | 'sn' | 'nd' | 'fr' | 'zh' | 'ar';
+
+export interface TtsPreferences {
+  enabled: boolean;
+  language: SupportedTtsLanguage;
+  voiceURI?: string;
+  rate: number;
+  pitch: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   text: string;
+  originalText?: string;
+  translatedLang?: SupportedTtsLanguage;
+  translatedLangName?: string;
   timestamp: string;
   citations?: string[];
   isUnavailable?: boolean;

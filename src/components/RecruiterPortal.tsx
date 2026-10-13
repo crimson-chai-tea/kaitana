@@ -11,7 +11,9 @@ import {
   PortfolioProject, 
   ChatMessage,
   MediaImage,
-  MediaSelection 
+  MediaSelection,
+  TtsPreferences,
+  SupportedTtsLanguage
 } from '../types';
 import { 
   Bot, 
@@ -43,8 +45,16 @@ import {
   Maximize2,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  Volume2,
+  VolumeX,
+  Volume1,
+  Settings as SettingsIcon,
+  Languages,
+  Square
 } from 'lucide-react';
+import { ttsEngine, SUPPORTED_LANGUAGES } from '../services/ttsService';
+import TtsSettingsModal from './TtsSettingsModal';
 import { GoogleWorkspaceUser } from '../types';
 
 interface RecruiterPortalProps {
@@ -81,6 +91,34 @@ export default function RecruiterPortal({
   const [sessionUnlockedFiles, setSessionUnlockedFiles] = useState<string[]>([]);
   const [showDownloadFeedback, setShowDownloadFeedback] = useState<string | null>(null);
   const [voiceNotification, setVoiceNotification] = useState<string | null>(null);
+
+  // Text-to-Speech (TTS) & Localization state
+  const [ttsPreferences, setTtsPreferences] = useState<TtsPreferences>(() => {
+    try {
+      const saved = localStorage.getItem('kaitana_tts_preferences');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Failed to parse saved TTS preferences', e);
+    }
+    return {
+      enabled: false,
+      language: 'en',
+      rate: 1.0,
+      pitch: 1.0
+    };
+  });
+  const [isTtsModalOpen, setIsTtsModalOpen] = useState(false);
+  const [currentlySpeakingMsgId, setCurrentlySpeakingMsgId] = useState<string | null>(null);
+  const [showOriginalFor, setShowOriginalFor] = useState<Record<string, boolean>>({});
+
+  // Persist TTS preferences
+  useEffect(() => {
+    try {
+      localStorage.setItem('kaitana_tts_preferences', JSON.stringify(ttsPreferences));
+    } catch (e) {
+      console.warn('Failed to persist TTS preferences', e);
+    }
+  }, [ttsPreferences]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -147,9 +185,54 @@ Feel free to ask me anything about my work experience, specific project architec
       ? chenPresets 
       : genericPresets;
 
+  // Handle toggling TTS voice narration On/Off
+  const toggleTtsNarration = () => {
+    const nextState = !ttsPreferences.enabled;
+    if (!nextState) {
+      ttsEngine.stop();
+      setCurrentlySpeakingMsgId(null);
+    }
+    setTtsPreferences(prev => ({ ...prev, enabled: nextState }));
+    onAddLog(
+      'Voice Narration',
+      `AI Clone Voice Narration switched ${nextState ? 'ON' : 'OFF'}`,
+      'info'
+    );
+  };
+
+  // Speak a specific message aloud using current preferences
+  const speakMessage = (msgId: string, text: string) => {
+    if (currentlySpeakingMsgId === msgId) {
+      ttsEngine.stop();
+      setCurrentlySpeakingMsgId(null);
+      return;
+    }
+
+    ttsEngine.stop();
+    setCurrentlySpeakingMsgId(msgId);
+
+    ttsEngine.speak(text, {
+      ...ttsPreferences,
+      onStart: () => {
+        setCurrentlySpeakingMsgId(msgId);
+      },
+      onEnd: () => {
+        setCurrentlySpeakingMsgId(prev => (prev === msgId ? null : prev));
+      },
+      onError: (err) => {
+        console.warn('TTS playback error:', err);
+        setCurrentlySpeakingMsgId(prev => (prev === msgId ? null : prev));
+      }
+    });
+  };
+
   // Handle Form Question Submissions
   const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim()) return;
+
+    // Immediately terminate any active TTS speech when a new query is submitted
+    ttsEngine.stop();
+    setCurrentlySpeakingMsgId(null);
 
     const userMsg: ChatMessage = {
       id: `user-msg-${Date.now()}`,
@@ -183,11 +266,32 @@ Feel free to ask me anything about my work experience, specific project architec
 
       const data = await response.json();
 
+      // Pipeline Sequence:
+      // AI Text Generation -> Target Language Translation (if selected) -> TTS Audio Synthesis -> Audio Playback
+      const originalAnswer = data.answer || '';
+      let finalAnswer = originalAnswer;
+      let translatedLangName: string | undefined = undefined;
+
+      if (ttsPreferences.language && ttsPreferences.language !== 'en') {
+        try {
+          const targetLangObj = SUPPORTED_LANGUAGES.find(l => l.code === ttsPreferences.language);
+          translatedLangName = targetLangObj?.name;
+          finalAnswer = await ttsEngine.translateText(originalAnswer, ttsPreferences.language);
+        } catch (transErr) {
+          console.warn('Translation failed, falling back to original English text:', transErr);
+          finalAnswer = originalAnswer;
+        }
+      }
+
       setIsTyping(false);
+      const newAiMsgId = `ai-msg-${Date.now()}`;
       setMessages(prev => [...prev, {
-        id: `ai-msg-${Date.now()}`,
+        id: newAiMsgId,
         role: 'assistant',
-        text: data.answer,
+        text: finalAnswer,
+        originalText: ttsPreferences.language !== 'en' ? originalAnswer : undefined,
+        translatedLang: ttsPreferences.language !== 'en' ? ttsPreferences.language : undefined,
+        translatedLangName: translatedLangName,
         citations: data.citations || [],
         isUnavailable: data.isUnavailable || false,
         mediaItems: data.mediaItems || [],
@@ -195,6 +299,11 @@ Feel free to ask me anything about my work experience, specific project architec
         matchedTag: data.matchedTag,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
+
+      // If TTS narration is toggled ON, automatically synthesize and play response
+      if (ttsPreferences.enabled) {
+        speakMessage(newAiMsgId, finalAnswer);
+      }
 
       if (data.mediaItems && data.mediaItems.length > 0) {
         if (data.matchedSelection) {
@@ -236,13 +345,20 @@ Feel free to ask me anything about my work experience, specific project architec
       console.error(err);
       setIsTyping(false);
       
+      const fallbackText = `The AI concierge database is currently offline or the environment API keys are missing. Standard response restricted to verified offline index. ${user.name} is an expert in: ${user.skills.slice(0, 4).join(', ')}.`;
+      const fallbackMsgId = `ai-msg-err-${Date.now()}`;
+
       // Fallback fallback response
       setMessages(prev => [...prev, {
-        id: `ai-msg-err-${Date.now()}`,
+        id: fallbackMsgId,
         role: 'assistant',
-        text: `The AI concierge database is currently offline or the environment API keys are missing. Standard response restricted to verified offline index. ${user.name} is an expert in: ${user.skills.slice(0, 4).join(', ')}.`,
+        text: fallbackText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
+
+      if (ttsPreferences.enabled) {
+        speakMessage(fallbackMsgId, fallbackText);
+      }
     }
   };
 
@@ -300,10 +416,11 @@ Feel free to ask me anything about my work experience, specific project architec
     setIsVoiceActive(false);
   };
 
-  // Cleanup audio tracks on unmount
+  // Cleanup audio tracks and speech on unmount
   useEffect(() => {
     return () => {
       stopAudioCapture();
+      ttsEngine.stop();
     };
   }, []);
 
@@ -315,6 +432,10 @@ Feel free to ask me anything about my work experience, specific project architec
       setTimeout(() => setVoiceNotification(null), 3000);
       return;
     }
+
+    // Stop active speech playback if voice input is triggered
+    ttsEngine.stop();
+    setCurrentlySpeakingMsgId(null);
 
     onAddLog('Audio Engagement', `Recruiter opened live audio voice transcription`, 'info');
 
@@ -684,6 +805,51 @@ Feel free to ask me anything about my work experience, specific project architec
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Voice Narration Persistent Toggle */}
+              <button
+                type="button"
+                onClick={toggleTtsNarration}
+                className={`px-2.5 py-1 rounded-lg border text-[10px] font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
+                  ttsPreferences.enabled
+                    ? 'bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-300 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
+                    : 'bg-white/5 hover:bg-white/10 text-white/50 border-white/10'
+                }`}
+                title={ttsPreferences.enabled ? "Voice narration is ON (Click to turn off)" : "Voice narration is OFF (Click to turn on)"}
+              >
+                {ttsPreferences.enabled ? (
+                  <>
+                    <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="hidden sm:inline font-semibold">Voice ON</span>
+                    {currentlySpeakingMsgId && (
+                      <span className="flex items-center gap-0.5 ml-0.5">
+                        <span className="w-1 h-2 bg-emerald-400 animate-pulse rounded-full" />
+                        <span className="w-1 h-3.5 bg-emerald-400 animate-pulse delay-75 rounded-full" />
+                        <span className="w-1 h-2 bg-emerald-400 animate-pulse delay-150 rounded-full" />
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <VolumeX className="w-3.5 h-3.5 text-white/40" />
+                    <span className="hidden sm:inline">Voice OFF</span>
+                  </>
+                )}
+              </button>
+
+              {/* TTS Voice & Translation Settings Modal Trigger */}
+              <button
+                type="button"
+                onClick={() => setIsTtsModalOpen(true)}
+                className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 text-[10px] font-mono flex items-center gap-1 transition-colors cursor-pointer relative"
+                title="Voice Narration & Translation Settings"
+              >
+                <SettingsIcon className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Voice Settings</span>
+                {ttsPreferences.language !== 'en' && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 ring-2 ring-[#141418]" />
+                )}
+              </button>
+
               {onOpenExportModal && (
                 <button
                   type="button"
@@ -748,11 +914,56 @@ Feel free to ask me anything about my work experience, specific project architec
                           <span className="text-indigo-400 flex items-center gap-0.5"><Cpu className="w-3 h-3" /> Digital Self</span>
                         )}
                       </span>
-                      <span>{msg.timestamp}</span>
+                      <div className="flex items-center gap-2">
+                        {msg.role === 'assistant' && (
+                          <button
+                            type="button"
+                            onClick={() => speakMessage(msg.id, showOriginalFor[msg.id] && msg.originalText ? msg.originalText : msg.text)}
+                            className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-mono ${
+                              currentlySpeakingMsgId === msg.id 
+                                ? 'text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 shadow-sm' 
+                                : 'text-white/40 hover:text-white hover:bg-white/5 border border-transparent'
+                            }`}
+                            title={currentlySpeakingMsgId === msg.id ? "Stop voice audio" : "Listen to audio narration"}
+                          >
+                            {currentlySpeakingMsgId === msg.id ? (
+                              <>
+                                <Square className="w-2.5 h-2.5 fill-emerald-400 text-emerald-400" />
+                                <span className="text-[9px] capitalize">Stop</span>
+                              </>
+                            ) : (
+                              <>
+                                <Volume2 className="w-3 h-3" />
+                                <span className="text-[9px] capitalize">Listen</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                        <span>{msg.timestamp}</span>
+                      </div>
                     </div>
 
+                    {/* Translation banner if message was translated */}
+                    {msg.translatedLang && msg.originalText && (
+                      <div className="flex items-center justify-between text-[10px] font-mono mb-2 pb-1.5 border-b border-white/10 text-indigo-300">
+                        <span className="flex items-center gap-1">
+                          <Languages className="w-3 h-3 text-indigo-400" />
+                          <span>Translated to {msg.translatedLangName || msg.translatedLang}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowOriginalFor(prev => ({ ...prev, [msg.id]: !prev[msg.id] }))}
+                          className="text-[9px] text-white/50 hover:text-white underline cursor-pointer"
+                        >
+                          {showOriginalFor[msg.id] ? 'Show Translated' : 'Show Original (EN)'}
+                        </button>
+                      </div>
+                    )}
+
                     {/* Actual markdown or text block */}
-                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                    <p className="whitespace-pre-wrap">
+                      {showOriginalFor[msg.id] && msg.originalText ? msg.originalText : msg.text}
+                    </p>
 
                     {/* Grounded warning triggers for insufficient weights */}
                     {msg.isUnavailable && (
@@ -1037,6 +1248,22 @@ Feel free to ask me anything about my work experience, specific project architec
           );
         })()}
       </AnimatePresence>
+
+      {/* Voice & Translation Settings Modal */}
+      <TtsSettingsModal
+        isOpen={isTtsModalOpen}
+        onClose={() => setIsTtsModalOpen(false)}
+        preferences={ttsPreferences}
+        candidateName={user.name}
+        onUpdatePreferences={(newPrefs) => {
+          setTtsPreferences(newPrefs);
+          onAddLog(
+            'Voice Settings',
+            `TTS preferences updated (Lang: ${newPrefs.language.toUpperCase()}, Speed: ${newPrefs.rate}x, Pitch: ${newPrefs.pitch}x)`,
+            'info'
+          );
+        }}
+      />
 
     </div>
   );
