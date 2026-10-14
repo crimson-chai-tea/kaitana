@@ -6,6 +6,7 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
@@ -18,6 +19,18 @@ async function startServer() {
 
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+  // Persistent Uploads & Media Storage Directories
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use('/uploads', express.static(uploadsDir));
+
+  const mediaStorageDir = path.join(process.cwd(), 'data', 'media');
+  if (!fs.existsSync(mediaStorageDir)) {
+    fs.mkdirSync(mediaStorageDir, { recursive: true });
+  }
 
   // Initialize Gemini SDK with telemetry User-Agent header
   const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -483,7 +496,67 @@ Examine the database and visual catalog carefully. Return a JSON structure conta
     return res.json({ mediaItems: [], matchedSelection: undefined, matchedTag: undefined });
   });
 
-  // 5. API: AUDIO TRANSCRIPTION (VOICE-TO-TEXT)
+  // 5. API: MEDIA FILE UPLOAD (PERSISTED ON SERVER)
+  app.post('/api/media/upload', async (req, res) => {
+    try {
+      const { fileBase64, fileName, mimeType } = req.body;
+      if (!fileBase64) {
+        return res.status(400).json({ error: 'Missing fileBase64' });
+      }
+
+      const buffer = Buffer.from(fileBase64.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+      let ext = 'jpg';
+      const lowerName = (fileName || '').toLowerCase();
+      if (mimeType?.includes('png') || lowerName.endsWith('.png')) ext = 'png';
+      else if (mimeType?.includes('webp') || lowerName.endsWith('.webp')) ext = 'webp';
+      else if (mimeType?.includes('svg') || lowerName.endsWith('.svg')) ext = 'svg';
+      else if (mimeType?.includes('gif') || lowerName.endsWith('.gif')) ext = 'gif';
+
+      const uniqueName = `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const filePath = path.join(uploadsDir, uniqueName);
+      await fs.promises.writeFile(filePath, buffer);
+
+      const fileUrl = `/uploads/${uniqueName}`;
+      return res.json({ success: true, url: fileUrl, fileName: uniqueName });
+    } catch (err: any) {
+      console.error('Media upload error:', err);
+      return res.status(500).json({ error: 'Failed to save media file' });
+    }
+  });
+
+  // 6. API: SAVE ALL PROFILE MEDIA TO SERVER STORAGE
+  app.post('/api/media/save-all', async (req, res) => {
+    try {
+      const { profileId = 'custom', images = [], selections = [] } = req.body;
+      const cleanId = String(profileId).replace(/[^a-zA-Z0-9_-]/g, '');
+      const filePath = path.join(mediaStorageDir, `${cleanId}.json`);
+      await fs.promises.writeFile(filePath, JSON.stringify({ images, selections }, null, 2), 'utf-8');
+      return res.json({ success: true, count: images.length, selectionsCount: selections.length });
+    } catch (err: any) {
+      console.error('Save media all error:', err);
+      return res.status(500).json({ error: 'Failed to persist media profile' });
+    }
+  });
+
+  // 7. API: LOAD PROFILE MEDIA FROM SERVER STORAGE
+  app.get('/api/media/all/:profileId', async (req, res) => {
+    try {
+      const { profileId } = req.params;
+      const cleanId = String(profileId).replace(/[^a-zA-Z0-9_-]/g, '');
+      const filePath = path.join(mediaStorageDir, `${cleanId}.json`);
+      if (fs.existsSync(filePath)) {
+        const content = await fs.promises.readFile(filePath, 'utf-8');
+        const parsed = JSON.parse(content);
+        return res.json({ success: true, images: parsed.images || [], selections: parsed.selections || [] });
+      }
+      return res.json({ success: false, images: [], selections: [] });
+    } catch (err: any) {
+      console.error('Load media all error:', err);
+      return res.status(500).json({ error: 'Failed to load media profile' });
+    }
+  });
+
+  // 8. API: AUDIO TRANSCRIPTION (VOICE-TO-TEXT)
   app.post('/api/transcribe-audio', async (req, res) => {
     const { audioBase64, mimeType } = req.body;
 

@@ -289,28 +289,40 @@ Past background: Developed key modular components for enterprise software suites
     }
   }, [activeProfileId]);
 
-  useEffect(() => {
+  const safeSaveLocalStorage = (key: string, data: any) => {
     try {
-      localStorage.setItem('kaitana_vance_state', JSON.stringify(vanceState));
-    } catch (e) {
-      console.error(e);
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (e: any) {
+      console.warn(`localStorage save warning for ${key}:`, e?.message);
+      try {
+        if (data && data.images) {
+          const lightweight = {
+            ...data,
+            images: data.images.map((img: any) => ({
+              ...img,
+              url: img.url && img.url.length > 1000 && img.url.startsWith('data:') 
+                ? img.url.slice(0, 100)
+                : img.url
+            }))
+          };
+          localStorage.setItem(key, JSON.stringify(lightweight));
+        }
+      } catch (inner) {
+        console.error('Failed to save to localStorage:', inner);
+      }
     }
+  };
+
+  useEffect(() => {
+    safeSaveLocalStorage('kaitana_vance_state', vanceState);
   }, [vanceState]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('kaitana_chen_state', JSON.stringify(chenState));
-    } catch (e) {
-      console.error(e);
-    }
+    safeSaveLocalStorage('kaitana_chen_state', chenState);
   }, [chenState]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('kaitana_custom_state', JSON.stringify(customState));
-    } catch (e) {
-      console.error(e);
-    }
+    safeSaveLocalStorage('kaitana_custom_state', customState);
   }, [customState]);
 
   // Helper selector for current state
@@ -375,12 +387,42 @@ Past background: Developed key modular components for enterprise software suites
     if (activeProfileId === 'vance') setVanceState({ ...vanceState, images: updatedImages });
     else if (activeProfileId === 'chen') setChenState({ ...chenState, images: updatedImages });
     else setCustomState({ ...customState, images: updatedImages });
+
+    // Ensure server-side persistence for permanent account retention
+    try {
+      fetch('/api/media/save-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileId: activeProfileId,
+          images: updatedImages,
+          selections: currentData.selections || []
+        })
+      }).catch(e => console.warn('Server media sync error:', e));
+    } catch (e) {
+      console.warn('Server media sync error:', e);
+    }
   };
 
   const handleUpdateSelections = (updatedSelections: MediaSelection[]) => {
     if (activeProfileId === 'vance') setVanceState({ ...vanceState, selections: updatedSelections });
     else if (activeProfileId === 'chen') setChenState({ ...chenState, selections: updatedSelections });
     else setCustomState({ ...customState, selections: updatedSelections });
+
+    // Ensure server-side persistence for permanent account retention
+    try {
+      fetch('/api/media/save-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileId: activeProfileId,
+          images: currentData.images || [],
+          selections: updatedSelections
+        })
+      }).catch(e => console.warn('Server media sync error:', e));
+    } catch (e) {
+      console.warn('Server media sync error:', e);
+    }
   };
 
   const handleUpdateRecommendations = (updatedRecs: Recommendation[]) => {
@@ -682,6 +724,7 @@ Past background: Developed key modular components for enterprise software suites
                         onUpdateSelections={handleUpdateSelections}
                         onAddLog={handleAddLog}
                         userName={currentData.user.name}
+                        profileId={activeProfileId}
                       />
                     );
                   case 'chat-test':

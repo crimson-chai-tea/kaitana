@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   MediaImage, 
   MediaSelection 
@@ -20,7 +20,9 @@ import {
   Eye, 
   Folder,
   SlidersHorizontal,
-  Maximize2
+  Maximize2,
+  Loader2,
+  CloudUpload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -31,7 +33,48 @@ interface MediaManagerProps {
   onUpdateSelections: (selections: MediaSelection[]) => void;
   onAddLog: (action: string, details: string, status: 'info' | 'success' | 'warning') => void;
   userName?: string;
+  profileId?: string;
 }
+
+// Client-side image compressor: scales down large files to max 1280px and compressed JPEG/WebP
+const compressImageFile = (file: File, maxDim = 1280, quality = 0.82): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+          resolve(canvas.toDataURL(mime, quality));
+        } else {
+          resolve(e.target?.result as string);
+        }
+      };
+      img.onerror = () => resolve(e.target?.result as string);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+};
 
 export default function MediaManager({
   images,
@@ -39,7 +82,8 @@ export default function MediaManager({
   onUpdateImages,
   onUpdateSelections,
   onAddLog,
-  userName = 'Creator'
+  userName = 'Creator',
+  profileId = 'custom'
 }: MediaManagerProps) {
   // Navigation & Filtering
   const [activeSelectionFilter, setActiveSelectionFilter] = useState<string>('all');
@@ -51,10 +95,16 @@ export default function MediaManager({
   const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
+  const [uploadedServerUrl, setUploadedServerUrl] = useState<string | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [newCaption, setNewCaption] = useState('');
   const [newSelectedSelectionIds, setNewSelectedSelectionIds] = useState<string[]>([]);
   const [newTags, setNewTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+
+  // Inline Selection Creation inside Upload & Edit Modals
+  const [isInlineCreatingSelection, setIsInlineCreatingSelection] = useState(false);
+  const [inlineSelectionName, setInlineSelectionName] = useState('');
 
   // Selection CRUD States
   const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
@@ -68,11 +118,68 @@ export default function MediaManager({
   const [editSelectionIds, setEditSelectionIds] = useState<string[]>([]);
   const [editTags, setEditTags] = useState<string[]>([]);
   const [editTagInput, setEditTagInput] = useState('');
+  const [isEditInlineCreatingSelection, setIsEditInlineCreatingSelection] = useState(false);
+  const [editInlineSelectionName, setEditInlineSelectionName] = useState('');
 
   // Lightbox Preview Modal
   const [lightboxImage, setLightboxImage] = useState<MediaImage | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync media data to persistent server storage
+  const syncMediaToServer = async (imgs: MediaImage[], sels: MediaSelection[]) => {
+    try {
+      await fetch('/api/media/save-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileId,
+          images: imgs,
+          selections: sels
+        })
+      });
+    } catch (e) {
+      console.warn('Sync media to server warning:', e);
+    }
+  };
+
+  // Load any server-persisted media for this profile on mount
+  useEffect(() => {
+    const loadServerMedia = async () => {
+      try {
+        const res = await fetch(`/api/media/all/${profileId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            let hasNewImages = false;
+            let mergedImages = [...images];
+            if (data.images && data.images.length > 0) {
+              const existingIds = new Set(images.map(i => i.id));
+              const missingImages = data.images.filter((i: MediaImage) => !existingIds.has(i.id));
+              if (missingImages.length > 0) {
+                mergedImages = [...missingImages, ...images];
+                onUpdateImages(mergedImages);
+                hasNewImages = true;
+              }
+            }
+
+            let mergedSels = [...selections];
+            if (data.selections && data.selections.length > 0) {
+              const existingSelIds = new Set(selections.map(s => s.id));
+              const missingSels = data.selections.filter((s: MediaSelection) => !existingSelIds.has(s.id));
+              if (missingSels.length > 0) {
+                mergedSels = [...selections, ...missingSels];
+                onUpdateSelections(mergedSels);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load server media:', err);
+      }
+    };
+    loadServerMedia();
+  }, [profileId]);
 
   // All unique tags across all images
   const allUniqueTags = Array.from(
@@ -108,23 +215,89 @@ export default function MediaManager({
     return true;
   });
 
-  // Handle file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle local file selection with client compression + server upload
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setNewImagePreview(result);
-        setNewImageUrl(result);
+      setIsUploadingFile(true);
+      try {
+        // 1. Create compressed base64 data URL for instant responsive preview
+        const compressedBase64 = await compressImageFile(file);
+        setNewImagePreview(compressedBase64);
+        setNewImageUrl(compressedBase64);
+
         if (!newCaption) {
-          // Generate a clean caption from file name
           const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
           setNewCaption(nameWithoutExt);
         }
-      };
-      reader.readAsDataURL(file);
+
+        // 2. Persist to server /api/media/upload for permanent file storage
+        const response = await fetch('/api/media/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileBase64: compressedBase64,
+            fileName: file.name,
+            mimeType: file.type || 'image/jpeg'
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.url) {
+            setUploadedServerUrl(data.url);
+            setNewImageUrl(data.url);
+          }
+        }
+      } catch (err) {
+        console.warn('Server upload fallback to compressed base64:', err);
+      } finally {
+        setIsUploadingFile(false);
+      }
     }
+  };
+
+  // Quick Create Selection inside Upload Form
+  const handleQuickCreateSelection = () => {
+    if (!inlineSelectionName.trim()) return;
+    const newSel: MediaSelection = {
+      id: `sel-${Date.now()}`,
+      name: inlineSelectionName.trim(),
+      description: 'Custom curated visual collection'
+    };
+    const updatedSels = [...selections, newSel];
+    onUpdateSelections(updatedSels);
+    syncMediaToServer(images, updatedSels);
+    onAddLog('Selection Created', `Created new selection: "${newSel.name}" during upload`, 'success');
+
+    // Automatically assign to the currently uploading image
+    if (!newSelectedSelectionIds.includes(newSel.id)) {
+      setNewSelectedSelectionIds([...newSelectedSelectionIds, newSel.id]);
+    }
+
+    setInlineSelectionName('');
+    setIsInlineCreatingSelection(false);
+  };
+
+  // Quick Create Selection inside Edit Form
+  const handleQuickCreateSelectionForEdit = () => {
+    if (!editInlineSelectionName.trim()) return;
+    const newSel: MediaSelection = {
+      id: `sel-${Date.now()}`,
+      name: editInlineSelectionName.trim(),
+      description: 'Custom curated visual collection'
+    };
+    const updatedSels = [...selections, newSel];
+    onUpdateSelections(updatedSels);
+    syncMediaToServer(images, updatedSels);
+    onAddLog('Selection Created', `Created new selection: "${newSel.name}" during edit`, 'success');
+
+    if (!editSelectionIds.includes(newSel.id)) {
+      setEditSelectionIds([...editSelectionIds, newSel.id]);
+    }
+
+    setEditInlineSelectionName('');
+    setIsEditInlineCreatingSelection(false);
   };
 
   // Tag chip helper for creation
@@ -149,10 +322,10 @@ export default function MediaManager({
     }
   };
 
-  // Save New Image
+  // Save New Image (retention guaranteed via server sync & compressed URLs)
   const handleSaveNewImage = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalUrl = newImagePreview || newImageUrl.trim();
+    const finalUrl = uploadedServerUrl || newImageUrl.trim() || newImagePreview;
     if (!finalUrl) {
       alert('Please upload an image file or provide a valid image URL');
       return;
@@ -167,7 +340,12 @@ export default function MediaManager({
       tags: newTags
     };
 
-    onUpdateImages([newImg, ...images]);
+    const updatedImages = [newImg, ...images];
+    onUpdateImages(updatedImages);
+
+    // Guaranteed persistence: sync full catalog to server storage
+    syncMediaToServer(updatedImages, selections);
+
     onAddLog(
       'Media Image Uploaded',
       `Added "${newImg.caption}" to showcase with ${newImg.selectionIds.length} selections and ${newImg.tags.length} tags.`,
@@ -178,10 +356,13 @@ export default function MediaManager({
     setIsUploadModalOpen(false);
     setNewImagePreview(null);
     setNewImageUrl('');
+    setUploadedServerUrl(null);
     setNewCaption('');
     setNewSelectedSelectionIds([]);
     setNewTags([]);
     setTagInput('');
+    setIsInlineCreatingSelection(false);
+    setInlineSelectionName('');
   };
 
   // Selection CRUD Handlers
@@ -203,14 +384,15 @@ export default function MediaManager({
     e.preventDefault();
     if (!selectionName.trim()) return;
 
+    let updatedSels: MediaSelection[];
     if (editingSelection) {
       // Update existing
-      const updated = selections.map(s => 
+      updatedSels = selections.map(s => 
         s.id === editingSelection.id 
           ? { ...s, name: selectionName.trim(), description: selectionDesc.trim() } 
           : s
       );
-      onUpdateSelections(updated);
+      onUpdateSelections(updatedSels);
       onAddLog('Selection Updated', `Renamed selection to "${selectionName.trim()}"`, 'info');
     } else {
       // Create new
@@ -219,10 +401,14 @@ export default function MediaManager({
         name: selectionName.trim(),
         description: selectionDesc.trim()
       };
-      onUpdateSelections([...selections, newSel]);
+      updatedSels = [...selections, newSel];
+      onUpdateSelections(updatedSels);
       onAddLog('Selection Created', `Created new visual selection: "${newSel.name}"`, 'success');
       setActiveSelectionFilter(newSel.id);
     }
+
+    // Persist to server
+    syncMediaToServer(images, updatedSels);
 
     setIsSelectionModalOpen(false);
     setEditingSelection(null);
@@ -235,8 +421,8 @@ export default function MediaManager({
       return;
     }
 
-    // Remove selection from selections list
-    onUpdateSelections(selections.filter(s => s.id !== id));
+    const updatedSels = selections.filter(s => s.id !== id);
+    onUpdateSelections(updatedSels);
 
     // Unassign this selection ID from all images
     const updatedImages = images.map(img => ({
@@ -244,6 +430,9 @@ export default function MediaManager({
       selectionIds: (img.selectionIds || []).filter(sId => sId !== id)
     }));
     onUpdateImages(updatedImages);
+
+    // Persist to server
+    syncMediaToServer(updatedImages, updatedSels);
 
     if (activeSelectionFilter === id) {
       setActiveSelectionFilter('all');
@@ -257,7 +446,9 @@ export default function MediaManager({
     if (!confirm(`Are you sure you want to remove "${img.caption}" from your showcase?`)) {
       return;
     }
-    onUpdateImages(images.filter(i => i.id !== img.id));
+    const updatedImages = images.filter(i => i.id !== img.id);
+    onUpdateImages(updatedImages);
+    syncMediaToServer(updatedImages, selections);
     onAddLog('Media Removed', `Removed image "${img.caption}" from showcase`, 'warning');
   };
 
@@ -268,6 +459,8 @@ export default function MediaManager({
     setEditSelectionIds([...(img.selectionIds || [])]);
     setEditTags([...(img.tags || [])]);
     setEditTagInput('');
+    setIsEditInlineCreatingSelection(false);
+    setEditInlineSelectionName('');
   };
 
   const handleSaveEditImage = (e: React.FormEvent) => {
@@ -287,6 +480,7 @@ export default function MediaManager({
     });
 
     onUpdateImages(updated);
+    syncMediaToServer(updated, selections);
     onAddLog('Media Updated', `Updated metadata for "${editCaption.trim()}"`, 'info');
     setEditingImage(null);
   };
@@ -333,7 +527,8 @@ export default function MediaManager({
           <div className="flex items-center gap-2.5">
             <button
               onClick={handleOpenCreateSelection}
-              className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 text-xs font-medium flex items-center gap-2 transition-all cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 text-purple-300 hover:text-white border border-purple-500/30 text-xs font-medium flex items-center gap-2 transition-all cursor-pointer shadow-sm"
+              title="Create new selection collection"
             >
               <FolderPlus className="w-4 h-4 text-purple-400" />
               <span>New Selection</span>
@@ -341,7 +536,6 @@ export default function MediaManager({
 
             <button
               onClick={() => {
-                // Pre-assign active selection if one is selected
                 if (activeSelectionFilter !== 'all') {
                   setNewSelectedSelectionIds([activeSelectionFilter]);
                 } else {
@@ -360,16 +554,31 @@ export default function MediaManager({
 
       <div className="max-w-7xl mx-auto w-full p-5 md:p-6 space-y-6 flex-1">
         
-        {/* Selections Horizontal Tabs & Management Bar */}
+        {/* ========================================================================= */}
+        {/* Selections Horizontal Tabs & Management Bar ("Broad Category Collections") */}
+        {/* ========================================================================= */}
         <div className="bg-[#141418] border border-white/5 rounded-2xl p-3 md:p-4 shadow-xl">
-          <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2 text-xs font-mono uppercase text-white/60">
               <Layers className="w-3.5 h-3.5 text-indigo-400" />
               <span>Visual Selections ({selections.length})</span>
             </div>
-            <span className="text-[11px] text-white/40 font-mono hidden sm:inline">
-              Broad Category Collections for AI Recruiter Retrieval
-            </span>
+            
+            {/* Direct Header Button in "Broad Category Collections" Tab */}
+            <div className="flex items-center gap-2.5">
+              <span className="text-[11px] text-white/40 font-mono hidden md:inline">
+                Broad Category Collections for AI Recruiter Retrieval
+              </span>
+              <button
+                type="button"
+                onClick={handleOpenCreateSelection}
+                className="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 hover:text-white border border-purple-500/30 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                title="Create a new collection for broad category queries"
+              >
+                <Plus className="w-3.5 h-3.5 text-purple-400" />
+                <span>New Selection</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
@@ -436,6 +645,17 @@ export default function MediaManager({
                 </div>
               );
             })}
+
+            {/* Button to allow creation of new selections in the Broad Category Collections tab */}
+            <button
+              type="button"
+              onClick={handleOpenCreateSelection}
+              className="px-3 py-1.5 rounded-xl text-xs font-medium shrink-0 flex items-center gap-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 hover:text-white border border-dashed border-purple-500/30 hover:border-purple-500/60 transition-all cursor-pointer"
+              title="Add a new selection collection to tab bar"
+            >
+              <Plus className="w-3.5 h-3.5 text-purple-400" />
+              <span>New Selection</span>
+            </button>
           </div>
 
           {/* Active Selection Description banner if one is selected */}
@@ -634,7 +854,7 @@ export default function MediaManager({
       </div>
 
       {/* ========================================================= */}
-      {/* 1. UPLOAD IMAGE MODAL                                      */}
+      {/* 1. UPLOAD IMAGE MODAL (WITH BUTTON TO CREATE NEW SELECTION)*/}
       {/* ========================================================= */}
       <AnimatePresence>
         {isUploadModalOpen && (
@@ -707,7 +927,19 @@ export default function MediaManager({
                             alt="Preview"
                             className="max-h-40 mx-auto rounded-lg object-contain shadow"
                           />
-                          <p className="text-[11px] text-indigo-400 font-mono">Click to select different image</p>
+                          <div className="flex items-center justify-center gap-2">
+                            {isUploadingFile ? (
+                              <span className="text-[11px] text-indigo-400 font-mono flex items-center gap-1">
+                                <Loader2 className="w-3 h-3 animate-spin" /> Persisting image to server storage...
+                              </span>
+                            ) : uploadedServerUrl ? (
+                              <span className="text-[11px] text-emerald-400 font-mono flex items-center gap-1">
+                                <Check className="w-3 h-3" /> Stored & compressed for account retention
+                              </span>
+                            ) : (
+                              <p className="text-[11px] text-indigo-400 font-mono">Click to select different image</p>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -715,7 +947,7 @@ export default function MediaManager({
                             <Upload className="w-5 h-5" />
                           </div>
                           <p className="text-xs text-white/80 font-medium">Click to select image file</p>
-                          <p className="text-[10px] text-white/40">PNG, JPG, WebP, SVG supported</p>
+                          <p className="text-[10px] text-white/40">Auto-compressed and stored on server for zero-loss retention</p>
                         </div>
                       )}
                     </div>
@@ -731,6 +963,7 @@ export default function MediaManager({
                         onChange={(e) => {
                           setNewImageUrl(e.target.value);
                           setNewImagePreview(e.target.value);
+                          setUploadedServerUrl(null);
                         }}
                         placeholder="https://images.unsplash.com/photo-..."
                         className="w-full bg-[#0F0F12] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
@@ -762,12 +995,75 @@ export default function MediaManager({
                   />
                 </div>
 
-                {/* Multi-Selection Assign */}
-                <div className="space-y-1.5">
-                  <label className="text-xs text-white/80 font-medium block">
-                    Assign to Selections (Many-to-Many)
-                  </label>
-                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 bg-[#0F0F12] border border-white/5 rounded-xl">
+                {/* ========================================================================= */}
+                {/* Multi-Selection Assign WITH BUTTON TO CREATE NEW SELECTIONS IN UPLOAD      */}
+                {/* ========================================================================= */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-white/80 font-medium block">
+                      Assign to Selections (Many-to-Many)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsInlineCreatingSelection(!isInlineCreatingSelection)}
+                      className="px-2.5 py-1 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 hover:text-white border border-purple-500/30 text-[11px] font-mono flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Create a new selection right here during upload"
+                    >
+                      <Plus className="w-3 h-3 text-purple-400" />
+                      <span>New Selection</span>
+                    </button>
+                  </div>
+
+                  {/* Inline Creation Input Field during Upload */}
+                  {isInlineCreatingSelection && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="p-2.5 rounded-xl bg-purple-950/30 border border-purple-500/30 space-y-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={inlineSelectionName}
+                          onChange={(e) => setInlineSelectionName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleQuickCreateSelection();
+                            }
+                          }}
+                          placeholder="New selection name (e.g. Fieldwork, Robotics)..."
+                          className="flex-1 bg-[#0F0F12] border border-purple-500/40 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-purple-400"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleQuickCreateSelection}
+                          disabled={!inlineSelectionName.trim()}
+                          className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-xs font-medium text-white transition-all cursor-pointer shrink-0"
+                        >
+                          Create & Assign
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsInlineCreatingSelection(false);
+                            setInlineSelectionName('');
+                          }}
+                          className="p-1 text-white/40 hover:text-white"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-purple-300/70 font-mono">
+                        Creates the collection immediately and automatically assigns this image to it.
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {/* Selections List Pills */}
+                  <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 bg-[#0F0F12] border border-white/5 rounded-xl">
                     {selections.map(sel => {
                       const isSelected = newSelectedSelectionIds.includes(sel.id);
                       return (
@@ -777,7 +1073,7 @@ export default function MediaManager({
                           onClick={() => toggleSelectionForNew(sel.id)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-purple-600 text-white font-medium'
+                              ? 'bg-purple-600 text-white font-medium shadow-sm'
                               : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white border border-white/5'
                           }`}
                         >
@@ -787,6 +1083,16 @@ export default function MediaManager({
                         </button>
                       );
                     })}
+
+                    {/* Button inside the pill list to allow creation of new selections */}
+                    <button
+                      type="button"
+                      onClick={() => setIsInlineCreatingSelection(true)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 hover:text-white border border-dashed border-purple-500/30 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3 text-purple-400" />
+                      <span>New Selection</span>
+                    </button>
                   </div>
                 </div>
 
@@ -841,20 +1147,28 @@ export default function MediaManager({
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-white/5 flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsUploadModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-xs text-white/60 hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium text-xs shadow-lg shadow-indigo-500/20 cursor-pointer"
-                  >
-                    Save to Showcase
-                  </button>
+                <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-emerald-400/80 flex items-center gap-1">
+                    <CloudUpload className="w-3 h-3" /> Auto-sync enabled
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsUploadModalOpen(false)}
+                      className="px-4 py-2 rounded-xl text-xs text-white/60 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isUploadingFile}
+                      className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 text-white font-medium text-xs shadow-lg shadow-indigo-500/20 cursor-pointer flex items-center gap-1.5"
+                    >
+                      {isUploadingFile && <Loader2 className="w-3 h-3 animate-spin" />}
+                      <span>Save to Showcase</span>
+                    </button>
+                  </div>
                 </div>
               </form>
             </motion.div>
@@ -989,12 +1303,60 @@ export default function MediaManager({
                   />
                 </div>
 
-                {/* Selections multi-assignment */}
-                <div className="space-y-1.5">
-                  <label className="text-xs text-white/80 font-medium block">
-                    Assigned Selections
-                  </label>
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-[#0F0F12] border border-white/5 rounded-xl">
+                {/* Selections multi-assignment in Edit Modal */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-white/80 font-medium block">
+                      Assigned Selections
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditInlineCreatingSelection(!isEditInlineCreatingSelection)}
+                      className="px-2 py-0.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-[11px] font-mono flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3 text-purple-400" />
+                      <span>New Selection</span>
+                    </button>
+                  </div>
+
+                  {isEditInlineCreatingSelection && (
+                    <div className="p-2.5 rounded-xl bg-purple-950/30 border border-purple-500/30 flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editInlineSelectionName}
+                        onChange={(e) => setEditInlineSelectionName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleQuickCreateSelectionForEdit();
+                          }
+                        }}
+                        placeholder="New selection name..."
+                        className="flex-1 bg-[#0F0F12] border border-purple-500/40 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={handleQuickCreateSelectionForEdit}
+                        disabled={!editInlineSelectionName.trim()}
+                        className="px-2.5 py-1 rounded-lg bg-purple-600 text-xs text-white cursor-pointer"
+                      >
+                        Create
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditInlineCreatingSelection(false);
+                          setEditInlineSelectionName('');
+                        }}
+                        className="p-1 text-white/40 hover:text-white"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-1.5 p-2 bg-[#0F0F12] border border-white/5 rounded-xl max-h-32 overflow-y-auto">
                     {selections.map(sel => {
                       const isSelected = editSelectionIds.includes(sel.id);
                       return (
@@ -1014,6 +1376,15 @@ export default function MediaManager({
                         </button>
                       );
                     })}
+
+                    <button
+                      type="button"
+                      onClick={() => setIsEditInlineCreatingSelection(true)}
+                      className="px-2.5 py-1 rounded-lg text-xs font-mono flex items-center gap-1 bg-purple-500/10 text-purple-300 border border-dashed border-purple-500/30 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3 text-purple-400" />
+                      <span>New Selection</span>
+                    </button>
                   </div>
                 </div>
 
