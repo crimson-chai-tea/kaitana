@@ -218,15 +218,16 @@ Format the output clearly as clean, structured text with clear headings and bull
     }
   });
 
-  // 3. API: SHADOW INTERVIEW RAG CHATBOT
+  // 3. API: SHADOW INTERVIEW RAG CHATBOT (WITH VISUAL MEDIA RETRIEVAL LAYER)
   app.post('/api/chat', async (req, res) => {
-    const { profileName, userBio, messages, files } = req.body;
+    const { profileName, userBio, messages, files, mediaImages, mediaSelections } = req.body;
 
     if (!ai) {
       return res.status(200).json({
         answer: 'API key verification issue: The system is running in offline sandbox backup mode due to a missing GEMINI_API_KEY. To activate live AI-powered RAG testing, please configure your key in **Settings > Secrets**.',
         citations: ['Sandbox_Fallback_Notice.txt'],
-        isUnavailable: true
+        isUnavailable: true,
+        mediaItems: []
       });
     }
 
@@ -242,6 +243,28 @@ Format the output clearly as clean, structured text with clear headings and bull
         }).join('\n');
       }
 
+      // Format Visual Media Showcase Catalog (Selections & Tags)
+      let visualCatalogContext = 'No visual media catalog currently registered.';
+      const availableSelections = mediaSelections || [];
+      const availableImages = mediaImages || [];
+      const allAvailableTags: string[] = Array.from(
+        new Set(availableImages.flatMap((img: any) => img.tags || []))
+      );
+
+      if (availableSelections.length > 0 || availableImages.length > 0) {
+        visualCatalogContext = `AVAILABLE VISUAL SELECTIONS (Broad Collections):\n` +
+          availableSelections.map((s: any) => {
+            const count = availableImages.filter((img: any) => img.selectionIds?.includes(s.id)).length;
+            const tagsInSel = Array.from(new Set(
+              availableImages.filter((img: any) => img.selectionIds?.includes(s.id)).flatMap((img: any) => img.tags || [])
+            ));
+            return `- Selection ID: "${s.id}", Name: "${s.name}" (${count} images)
+  Description: ${s.description || 'No description provided'}
+  Associated Tags: [${tagsInSel.join(', ')}]`;
+          }).join('\n\n') +
+          `\n\nALL AVAILABLE MEDIA SEARCH TAGS (Specific Detail Tags):\n[${allAvailableTags.join(', ')}]`;
+      }
+
       // Construct the structured prompt enforcing strict zero-hallucination policies
       const systemPrompt = `You are the verified digital AI "Shadow" representing ${profileName} in a job interview / recruitment discussion.
 Their background, context, and philosophical statements: "${userBio}".
@@ -254,9 +277,24 @@ You must speak ONLY on behalf of ${profileName} and answer recruiter questions c
 - Do not make up answers even if they seem minor or logical (e.g., standard tools, specific libraries) unless they are in the database.
 - You must reference real file sources in your answer when available.
 
+VISUAL MEDIA RETRIEVAL DIRECTIVE:
+You have access to ${profileName}'s verified visual media catalog containing curated Selections and tagged images.
+When the recruiter explicitly or conversationally asks for visual evidence, photos, artwork, mockups, or diagrams:
+1. Selection Retrieval (Broad Category):
+   If the recruiter asks for a broad category or named collection (e.g., "Show me your farming projects", "Can I see your Cloud Architecture designs?", "Show me your artwork"), set "mediaQuery": { "type": "selection", "target": "<exact Selection Name or ID>" }.
+2. Tag Retrieval (Specific Detail):
+   If the recruiter asks for a specific detail, subject, or keyword (e.g., "Do you have photos of work on blueberry farms?", "Show me harvest pictures", "Do you have any kubernetes diagrams?"), set "mediaQuery": { "type": "tag", "target": "<matching tag name without #>" }.
+3. No Media Requested:
+   If the recruiter is not requesting visual evidence or no matching selection or tag exists in the catalog, set "mediaQuery": { "type": "none", "target": "" }.
+
 DATABASE OF VERIFIED DOCUMENTS:
 ==================================
 ${dbContext}
+==================================
+
+VISUAL MEDIA CATALOG & SELECTIONS:
+==================================
+${visualCatalogContext}
 ==================================`;
 
       // Map conversation logs to text representation or use direct chat formatting
@@ -268,10 +306,11 @@ ${conversationHistory}
 
 Recruiter is asking now: "${lastUserMsg}"
 
-Examine the database carefully. Return a JSON structure containing:
-1. "answer": Your helpful, professional, conversational response grounded ONLY in the database, written in 1st/3rd person representing ${profileName}. Or "The user has not provided verified information on that topic." if missing.
+Examine the database and visual catalog carefully. Return a JSON structure containing:
+1. "answer": Your helpful, professional, conversational response grounded ONLY in the database, written in 1st/3rd person representing ${profileName}. If visual media is retrieved, briefly introduce it in your response. Or "The user has not provided verified information on that topic." if missing.
 2. "citations": An array of file titles (e.g., ["Sarah_Vance_Resume_2026.pdf"]) which were actually scanned and verified to produce this answer. Leave empty if information is not found.
-3. "isUnavailable": Boolean set to true if the question is unanswerable from the database.`;
+3. "isUnavailable": Boolean set to true if the question is unanswerable from the database (visual media queries for items present in the visual catalog are valid and NOT unavailable).
+4. "mediaQuery": { "type": "selection" | "tag" | "none", "target": string }`;
 
       const response = await generateWithModelFallback(ai, {
         contents: promptText,
@@ -294,6 +333,20 @@ Examine the database carefully. Return a JSON structure containing:
                 type: Type.BOOLEAN,
                 description: 'True if answer cannot be verified in database.',
               },
+              mediaQuery: {
+                type: Type.OBJECT,
+                properties: {
+                  type: {
+                    type: Type.STRING,
+                    description: 'Type of visual retrieval: "selection", "tag", or "none".',
+                  },
+                  target: {
+                    type: Type.STRING,
+                    description: 'Name or ID of selection or tag being requested.',
+                  },
+                },
+                required: ['type', 'target'],
+              },
             },
             required: ['answer', 'citations', 'isUnavailable'],
           },
@@ -302,19 +355,135 @@ Examine the database carefully. Return a JSON structure containing:
 
       const resultText = response.text || '{}';
       const jsonParsed = JSON.parse(resultText.trim());
-      return res.json(jsonParsed);
+
+      // Execute Selection & Tag Matching against provided visual catalog
+      let mediaItems: any[] = [];
+      let matchedSelection: { id?: string; name: string } | undefined;
+      let matchedTag: string | undefined;
+
+      const qType = (jsonParsed.mediaQuery?.type || 'none').toLowerCase().trim();
+      const qTarget = (jsonParsed.mediaQuery?.target || '').toLowerCase().trim();
+
+      if (qType === 'selection' && qTarget) {
+        const sel = availableSelections.find((s: any) => 
+          s.id.toLowerCase() === qTarget ||
+          s.name.toLowerCase() === qTarget ||
+          s.name.toLowerCase().includes(qTarget) ||
+          qTarget.includes(s.name.toLowerCase())
+        );
+        if (sel) {
+          matchedSelection = { id: sel.id, name: sel.name };
+          mediaItems = availableImages.filter((img: any) => 
+            img.selectionIds && img.selectionIds.includes(sel.id)
+          );
+        }
+      } else if (qType === 'tag' && qTarget) {
+        const tagClean = qTarget.replace(/^#/, '').toLowerCase().trim();
+        matchedTag = tagClean;
+        mediaItems = availableImages.filter((img: any) => 
+          img.tags && img.tags.some((t: string) => 
+            t.toLowerCase() === tagClean || 
+            t.toLowerCase().includes(tagClean) || 
+            tagClean.includes(t.toLowerCase())
+          )
+        );
+      }
+
+      // Heuristic Fallback Search: if model returned 'none' or missed, but user message explicitly matches a Selection or Tag
+      if (mediaItems.length === 0 && availableImages.length > 0) {
+        const userMsgLower = lastUserMsg.toLowerCase();
+        
+        // 1. Check for Selection name match
+        const matchedSel = availableSelections.find((s: any) => 
+          userMsgLower.includes(s.name.toLowerCase())
+        );
+        if (matchedSel) {
+          matchedSelection = { id: matchedSel.id, name: matchedSel.name };
+          mediaItems = availableImages.filter((img: any) => 
+            img.selectionIds && img.selectionIds.includes(matchedSel.id)
+          );
+          if (jsonParsed.isUnavailable) {
+            jsonParsed.isUnavailable = false;
+            jsonParsed.answer = `Here are the visual assets from the verified "${matchedSel.name}" selection:`;
+          }
+        } else {
+          // 2. Check for Tag match (e.g. blueberry, harvest, fieldwork, etc.)
+          const foundTag = allAvailableTags.find(t => userMsgLower.includes(t.toLowerCase()));
+          if (foundTag) {
+            matchedTag = foundTag;
+            mediaItems = availableImages.filter((img: any) => 
+              img.tags && img.tags.some((t: string) => t.toLowerCase() === foundTag.toLowerCase())
+            );
+            if (jsonParsed.isUnavailable) {
+              jsonParsed.isUnavailable = false;
+              jsonParsed.answer = `Here are the verified visual records tagged with #${foundTag}:`;
+            }
+          }
+        }
+      }
+
+      return res.json({
+        ...jsonParsed,
+        mediaItems,
+        matchedSelection,
+        matchedTag
+      });
 
     } catch (error: any) {
       console.error('Gemini error during shadow interview:', error);
       return res.status(200).json({
         answer: `I encountered an unexpected issue processing the response (${error?.message || 'Verification service error'}).`,
         citations: [],
-        isUnavailable: true
+        isUnavailable: true,
+        mediaItems: []
       });
     }
   });
 
-  // 4. API: AUDIO TRANSCRIPTION (VOICE-TO-TEXT)
+  // 4. API: DEDICATED MEDIA QUERY ENDPOINT
+  app.post('/api/media/query', (req, res) => {
+    const { queryType, target, mediaImages = [], mediaSelections = [] } = req.body;
+    const cleanTarget = (target || '').toLowerCase().trim().replace(/^#/, '');
+
+    if (!cleanTarget) {
+      return res.json({ mediaItems: [], matchedSelection: undefined, matchedTag: undefined });
+    }
+
+    if (queryType === 'selection') {
+      const sel = mediaSelections.find((s: any) => 
+        s.id.toLowerCase() === cleanTarget ||
+        s.name.toLowerCase() === cleanTarget ||
+        s.name.toLowerCase().includes(cleanTarget) ||
+        cleanTarget.includes(s.name.toLowerCase())
+      );
+      if (sel) {
+        const items = mediaImages.filter((img: any) => img.selectionIds?.includes(sel.id));
+        return res.json({
+          mediaItems: items,
+          matchedSelection: { id: sel.id, name: sel.name },
+          matchedTag: undefined
+        });
+      }
+    } else {
+      // Query by tag
+      const items = mediaImages.filter((img: any) => 
+        img.tags && img.tags.some((t: string) => 
+          t.toLowerCase() === cleanTarget || 
+          t.toLowerCase().includes(cleanTarget) || 
+          cleanTarget.includes(t.toLowerCase())
+        )
+      );
+      return res.json({
+        mediaItems: items,
+        matchedSelection: undefined,
+        matchedTag: cleanTarget
+      });
+    }
+
+    return res.json({ mediaItems: [], matchedSelection: undefined, matchedTag: undefined });
+  });
+
+  // 5. API: AUDIO TRANSCRIPTION (VOICE-TO-TEXT)
   app.post('/api/transcribe-audio', async (req, res) => {
     const { audioBase64, mimeType } = req.body;
 

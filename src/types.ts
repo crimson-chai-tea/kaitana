@@ -69,6 +69,28 @@ export interface AuditLog {
   status: 'info' | 'warning' | 'success';
 }
 
+export interface MediaImage {
+  id: string;
+  url: string;
+  caption: string;
+  created_at: string;
+  selectionIds: string[];
+  tags: string[];
+}
+
+export interface MediaSelection {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface MediaRetrievalResult {
+  matchType: 'selection' | 'tag' | 'none';
+  selectionName?: string;
+  matchedTag?: string;
+  images: MediaImage[];
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -76,6 +98,9 @@ export interface ChatMessage {
   timestamp: string;
   citations?: string[];
   isUnavailable?: boolean;
+  mediaItems?: MediaImage[];
+  matchedSelection?: { id?: string; name: string };
+  matchedTag?: string;
 }
 
 export interface RecruiterSession {

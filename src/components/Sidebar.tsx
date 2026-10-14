@@ -12,7 +12,8 @@ import {
   UserCheck,
   Edit2,
   X,
-  Save
+  Save,
+  Image as ImageIcon
 } from 'lucide-react';
 import { UserProfile, GoogleWorkspaceUser } from '../types';
 
@@ -75,6 +76,7 @@ export default function Sidebar({
   const menuItems = [
     { id: 'database', label: 'Knowledge Vault', icon: Database, desc: 'Manage verified files & text' },
     { id: 'projects', label: 'Portfolio Projects', icon: Award, desc: 'Configure key highlights' },
+    { id: 'media', label: 'Visual Showcase', icon: ImageIcon, desc: 'Manage visual work & selections' },
     { id: 'chat-test', label: 'AI Chat Arena', icon: MessageSquare, desc: 'Test your interactive clone' },
     { id: 'audit', label: 'Smart Advisor', icon: Sparkles, desc: 'AI portfolio gaps auditor' },
     { id: 'logs', label: 'Access Audit Logs', icon: ShieldAlert, desc: 'Verify recruiter session feeds' },

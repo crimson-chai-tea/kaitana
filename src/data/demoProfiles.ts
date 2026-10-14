@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { UserProfile, FileDoc, PortfolioProject, Recommendation, AuditLog } from '../types';
+import { UserProfile, FileDoc, PortfolioProject, Recommendation, AuditLog, MediaImage, MediaSelection } from '../types';
 
 export interface FullProfile {
   user: UserProfile;
@@ -11,6 +11,8 @@ export interface FullProfile {
   projects: PortfolioProject[];
   recommendations: Recommendation[];
   logs: AuditLog[];
+  images: MediaImage[];
+  selections: MediaSelection[];
 }
 
 export const demoProfiles: Record<string, FullProfile> = {
@@ -186,6 +188,44 @@ In deep waters, navigation and absolute stability are key. This is incredibly si
         details: 'AWS Board digital ledger checked. Active CSA Pro certificate match complete with zero discrepancies.',
         status: 'success'
       }
+    ],
+    selections: [
+      {
+        id: 'sel-arch',
+        name: 'Cloud Architecture',
+        description: 'High availability multi-region infrastructure diagrams and failover topology'
+      },
+      {
+        id: 'sel-chaos',
+        name: 'Chaos Engineering',
+        description: 'Netflix microservice latency resilience and chaos monkey testing runs'
+      }
+    ],
+    images: [
+      {
+        id: 'img-vance-1',
+        url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80',
+        caption: 'Global Multi-Region Active-Active Cloud Architecture & Aurora Failover Topology',
+        created_at: '2026-03-01',
+        selectionIds: ['sel-arch'],
+        tags: ['aws', 'multi-region', 'architecture', 'database', 'cloud']
+      },
+      {
+        id: 'img-vance-2',
+        url: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=800&q=80',
+        caption: 'Kubernetes Ingress Gateway & Gloo Envoy Microservice Traffic Routing',
+        created_at: '2026-03-05',
+        selectionIds: ['sel-arch', 'sel-chaos'],
+        tags: ['kubernetes', 'architecture', 'service-mesh', 'envoy']
+      },
+      {
+        id: 'img-vance-3',
+        url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+        caption: 'Regional Blackhole Chaos Drill Metrics: 99.999% Service Continuity Maintained',
+        created_at: '2026-03-10',
+        selectionIds: ['sel-chaos'],
+        tags: ['chaos', 'metrics', 'monitoring', 'netflix']
+      }
     ]
   },
   chen: {
@@ -334,6 +374,44 @@ Grid layout: Fluid 12 Columns with variable 24px and 16px row padding based on v
         timestamp: '2026-05-20T14:32:00Z',
         details: 'Self-reported NN/g UX certification ID queued for automated validation.',
         status: 'info'
+      }
+    ],
+    selections: [
+      {
+        id: 'sel-neobank',
+        name: 'NeoBank Experience',
+        description: 'Mobile FinTech onboarding workflows and KYC conversion interfaces'
+      },
+      {
+        id: 'sel-designsys',
+        name: 'Design System',
+        description: 'Cross-platform design token kits, dark mode ergonomics, and micro-interactions'
+      }
+    ],
+    images: [
+      {
+        id: 'img-chen-1',
+        url: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+        caption: 'NeoBank Friction-Free 3-Step KYC Identity Verification Flow',
+        created_at: '2026-02-20',
+        selectionIds: ['sel-neobank'],
+        tags: ['fintech', 'mobile', 'onboarding', 'ui']
+      },
+      {
+        id: 'img-chen-2',
+        url: 'https://images.unsplash.com/photo-1581291518655-9523c932deda?auto=format&fit=crop&w=800&q=80',
+        caption: 'Stripe-Inspired Design Tokens, Dark Mode Palettes & Typography Kit',
+        created_at: '2026-02-24',
+        selectionIds: ['sel-designsys'],
+        tags: ['design-system', 'tokens', 'dark-mode', 'typography']
+      },
+      {
+        id: 'img-chen-3',
+        url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+        caption: 'FinTech Portfolio Dashboard & Fluid Haptic Interaction Prototypes',
+        created_at: '2026-03-02',
+        selectionIds: ['sel-neobank', 'sel-designsys'],
+        tags: ['fintech', 'prototyping', 'dashboard', 'ui']
       }
     ]
   }

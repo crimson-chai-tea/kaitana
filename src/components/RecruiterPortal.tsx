@@ -9,7 +9,9 @@ import {
   UserProfile, 
   FileDoc, 
   PortfolioProject, 
-  ChatMessage 
+  ChatMessage,
+  MediaImage,
+  MediaSelection 
 } from '../types';
 import { 
   Bot, 
@@ -34,7 +36,14 @@ import {
   Linkedin,
   Globe,
   FilePlus,
-  Share2
+  Share2,
+  Image as ImageIcon,
+  Folder,
+  Tag as TagIcon,
+  Maximize2,
+  ChevronLeft,
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { GoogleWorkspaceUser } from '../types';
 
@@ -42,6 +51,8 @@ interface RecruiterPortalProps {
   user: UserProfile;
   files: FileDoc[];
   projects: PortfolioProject[];
+  images?: MediaImage[];
+  selections?: MediaSelection[];
   onAddLog: (action: string, details: string, status: 'info' | 'success' | 'warning') => void;
   onOpenExportModal?: (messages: ChatMessage[]) => void;
   onOpenGmailModal?: () => void;
@@ -53,6 +64,8 @@ export default function RecruiterPortal({
   user, 
   files, 
   projects, 
+  images = [],
+  selections = [],
   onAddLog,
   onOpenExportModal,
   onOpenGmailModal,
@@ -101,25 +114,31 @@ Feel free to ask me anything about my work experience, specific project architec
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
+  const [lightboxMedia, setLightboxMedia] = useState<{
+    items: MediaImage[];
+    currentIndex: number;
+  } | null>(null);
+
   // Demo prompt presets
   const vancePresets = [
     "What is Sarah's multi-region database setup?",
-    "Review Sarah's employment background at Netflix and AWS.",
-    "Show me her AWS Certification details.",
-    "Explain her scuba diving philosophy."
+    "Show me your Cloud Architecture diagrams",
+    "Do you have any Kubernetes diagrams?",
+    "Review Sarah's employment background at Netflix and AWS."
   ];
 
   const chenPresets = [
     "Explain Marcus's NeoBank onboarding redesign.",
-    "What core design system values does Marcus prioritize?",
-    "Analyze his work conversion statistics.",
-    "What certifications does Marcus hold?"
+    "Show me your NeoBank designs",
+    "Do you have UI tokens and mobile screens?",
+    "What core design system values does Marcus prioritize?"
   ];
 
   const genericPresets = [
-    `Summarize ${user.name}'s best skills.`,
-    `What role is ${user.name} looking for?`,
-    "List verified certifications."
+    "Show me your farming projects",
+    "Do you have photos of work on blueberry farms?",
+    "Show me your artwork",
+    `Summarize ${user.name}'s best skills.`
   ];
 
   const activePresets = user.id === 'vance' 
@@ -144,7 +163,7 @@ Feel free to ask me anything about my work experience, specific project architec
     setIsTyping(true);
 
     try {
-      // Stream or await Gemini responses from full-stack /api/chat route
+      // Stream or await Gemini responses from full-stack /api/chat route with visual media layer
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -152,7 +171,9 @@ Feel free to ask me anything about my work experience, specific project architec
           profileName: user.name,
           userBio: user.bio,
           messages: [...messages, userMsg].map(m => ({ role: m.role, text: m.text })),
-          files: files // passing exact current files for genuine RAG!
+          files: files, // passing exact current files for genuine RAG!
+          mediaImages: images,
+          mediaSelections: selections
         })
       });
 
@@ -169,8 +190,33 @@ Feel free to ask me anything about my work experience, specific project architec
         text: data.answer,
         citations: data.citations || [],
         isUnavailable: data.isUnavailable || false,
+        mediaItems: data.mediaItems || [],
+        matchedSelection: data.matchedSelection,
+        matchedTag: data.matchedTag,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
+
+      if (data.mediaItems && data.mediaItems.length > 0) {
+        if (data.matchedSelection) {
+          onAddLog(
+            'Selection Retrieval',
+            `AI clone retrieved selection "${data.matchedSelection.name}" (${data.mediaItems.length} visual items)`,
+            'success'
+          );
+        } else if (data.matchedTag) {
+          onAddLog(
+            'Tag Retrieval',
+            `AI clone retrieved ${data.mediaItems.length} images matching tag #${data.matchedTag}`,
+            'success'
+          );
+        } else {
+          onAddLog(
+            'Media Retrieval',
+            `AI clone showcased ${data.mediaItems.length} visual work items in response.`,
+            'success'
+          );
+        }
+      }
 
       if (data.citations && data.citations.length > 0) {
         onAddLog(
@@ -715,6 +761,79 @@ Feel free to ask me anything about my work experience, specific project architec
                       </div>
                     )}
 
+                    {/* Visual Media Showcase Retrieval Card Stream */}
+                    {msg.mediaItems && msg.mediaItems.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-white/5 space-y-2">
+                        {/* Match Category Badge */}
+                        <div className="flex items-center justify-between text-[10px] font-mono">
+                          {msg.matchedSelection ? (
+                            <span className="text-purple-300 font-bold flex items-center gap-1 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-md">
+                              <Folder className="w-3 h-3 text-purple-400" />
+                              Verified Selection: {msg.matchedSelection.name} ({msg.mediaItems.length} items)
+                            </span>
+                          ) : msg.matchedTag ? (
+                            <span className="text-indigo-300 font-bold flex items-center gap-1 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md">
+                              <TagIcon className="w-3 h-3 text-indigo-400" />
+                              Filtered by Tag: #{msg.matchedTag} ({msg.mediaItems.length} items)
+                            </span>
+                          ) : (
+                            <span className="text-indigo-300 font-bold flex items-center gap-1 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md">
+                              <ImageIcon className="w-3 h-3 text-indigo-400" />
+                              Visual Evidence Retrieved ({msg.mediaItems.length} items)
+                            </span>
+                          )}
+                          <span className="text-white/40 text-[9px] uppercase hidden sm:inline">Click card to expand</span>
+                        </div>
+
+                        {/* Interactive Media Cards Grid */}
+                        <div className={`grid gap-2 mt-2 ${
+                          msg.mediaItems.length === 1 
+                            ? 'grid-cols-1' 
+                            : msg.mediaItems.length === 2 
+                              ? 'grid-cols-1 sm:grid-cols-2' 
+                              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                        }`}>
+                          {msg.mediaItems.map((media, mIdx) => (
+                            <div
+                              key={media.id || mIdx}
+                              onClick={() => setLightboxMedia({ items: msg.mediaItems!, currentIndex: mIdx })}
+                              className="group/media relative bg-[#0A0A0C] border border-white/10 hover:border-indigo-500/40 rounded-xl overflow-hidden cursor-pointer transition-all hover:scale-[1.02] shadow-lg flex flex-col"
+                            >
+                              <div className="relative aspect-[16/10] bg-black/50 overflow-hidden">
+                                <img
+                                  src={media.url}
+                                  alt={media.caption}
+                                  className="w-full h-full object-cover group-hover/media:scale-105 transition-transform duration-300"
+                                  loading="lazy"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover/media:opacity-80 transition-opacity" />
+                                <div className="absolute top-2 right-2 p-1 rounded-md bg-black/60 text-white/70 group-hover/media:text-white backdrop-blur-sm opacity-0 group-hover/media:opacity-100 transition-opacity">
+                                  <Maximize2 className="w-3 h-3" />
+                                </div>
+                                {media.tags && media.tags.length > 0 && (
+                                  <div className="absolute bottom-1.5 left-1.5 flex flex-wrap gap-1 max-w-[90%]">
+                                    {media.tags.slice(0, 2).map((t, tIdx) => (
+                                      <span key={tIdx} className="text-[8px] font-mono bg-black/70 backdrop-blur-sm text-indigo-300 px-1 rounded">
+                                        #{t}
+                                      </span>
+                                    ))}
+                                    {media.tags.length > 2 && (
+                                      <span className="text-[8px] font-mono bg-black/70 backdrop-blur-sm text-white/50 px-1 rounded">
+                                        +{media.tags.length - 2}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-2 text-[10px] font-medium text-white/90 line-clamp-1 group-hover/media:text-indigo-300 transition-colors">
+                                {media.caption}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Sources Citations footer */}
                     {msg.citations && msg.citations.length > 0 && (
                       <div className="mt-2 pt-2.5 border-t border-white/5 flex flex-col gap-1">
@@ -822,6 +941,102 @@ Feel free to ask me anything about my work experience, specific project architec
         </div>
 
       </div>
+
+      {/* Lightbox Modal for Full Image Expansion */}
+      <AnimatePresence>
+        {lightboxMedia && (() => {
+          const currentItem = lightboxMedia.items[lightboxMedia.currentIndex];
+          if (!currentItem) return null;
+          const totalCount = lightboxMedia.items.length;
+
+          const handlePrev = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            setLightboxMedia({
+              ...lightboxMedia,
+              currentIndex: (lightboxMedia.currentIndex - 1 + totalCount) % totalCount
+            });
+          };
+
+          const handleNext = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            setLightboxMedia({
+              ...lightboxMedia,
+              currentIndex: (lightboxMedia.currentIndex + 1) % totalCount
+            });
+          };
+
+          return (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/90 backdrop-blur-lg"
+              onClick={() => setLightboxMedia(null)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative max-w-4xl w-full bg-[#141418] border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+              >
+                {/* Close Button */}
+                <button
+                  onClick={() => setLightboxMedia(null)}
+                  className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center border border-white/20 transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                {/* Main Image View */}
+                <div className="relative flex-1 bg-black/60 flex items-center justify-center overflow-hidden p-2 min-h-[320px]">
+                  <img
+                    src={currentItem.url}
+                    alt={currentItem.caption}
+                    className="max-h-[60vh] max-w-full object-contain rounded-lg"
+                  />
+
+                  {totalCount > 1 && (
+                    <>
+                      <button
+                        onClick={handlePrev}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center border border-white/20 transition-all cursor-pointer"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={handleNext}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center border border-white/20 transition-all cursor-pointer"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Footer Metadata */}
+                <div className="p-4 md:p-5 bg-[#0F0F12] border-t border-white/5 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-white">
+                      {currentItem.caption}
+                    </h3>
+                    {totalCount > 1 && (
+                      <span className="text-xs font-mono text-white/50 shrink-0">
+                        {lightboxMedia.currentIndex + 1} / {totalCount}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {currentItem.tags?.map((t, idx) => (
+                      <span key={idx} className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-indigo-300 border border-white/5">
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
+      </AnimatePresence>
 
     </div>
   );

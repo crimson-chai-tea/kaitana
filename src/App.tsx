@@ -12,7 +12,9 @@ import {
   Recommendation, 
   AuditLog,
   ChatMessage,
-  GoogleWorkspaceUser 
+  GoogleWorkspaceUser,
+  MediaImage,
+  MediaSelection 
 } from './types';
 
 // Google Workspace Services & Modals
@@ -30,6 +32,7 @@ import AuthPage from './components/AuthPage';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Projects from './components/Projects';
+import MediaManager from './components/MediaManager';
 import RecruiterPortal from './components/RecruiterPortal';
 import PortfolioAudit from './components/PortfolioAudit';
 import Logs from './components/Logs';
@@ -97,7 +100,13 @@ export default function App() {
   const [vanceState, setVanceState] = useState(() => {
     try {
       const saved = localStorage.getItem('kaitana_vance_state');
-      return saved ? JSON.parse(saved) : demoProfiles.vance;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.images || parsed.images.length === 0) parsed.images = demoProfiles.vance.images;
+        if (!parsed.selections || parsed.selections.length === 0) parsed.selections = demoProfiles.vance.selections;
+        return parsed;
+      }
+      return demoProfiles.vance;
     } catch {
       return demoProfiles.vance;
     }
@@ -106,7 +115,13 @@ export default function App() {
   const [chenState, setChenState] = useState(() => {
     try {
       const saved = localStorage.getItem('kaitana_chen_state');
-      return saved ? JSON.parse(saved) : demoProfiles.chen;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.images || parsed.images.length === 0) parsed.images = demoProfiles.chen.images;
+        if (!parsed.selections || parsed.selections.length === 0) parsed.selections = demoProfiles.chen.selections;
+        return parsed;
+      }
+      return demoProfiles.chen;
     } catch {
       return demoProfiles.chen;
     }
@@ -172,7 +187,61 @@ Past background: Developed key modular components for enterprise software suites
           details: 'Grounded representation engine loaded with template facts for Malachai Uys.',
           status: 'info' as const
         }
-      ]
+      ],
+      selections: [
+        {
+          id: 'sel-farming',
+          name: 'Farming Projects',
+          description: 'Sustainable agriculture initiatives, blueberry cultivation, and fieldwork automation'
+        },
+        {
+          id: 'sel-artwork',
+          name: 'Artwork',
+          description: 'Visual arts, generative design studies, and creative portfolio pieces'
+        }
+      ] as MediaSelection[],
+      images: [
+        {
+          id: 'img-farm-1',
+          url: 'https://images.unsplash.com/photo-1595231776515-ddffb1f4eb73?auto=format&fit=crop&w=800&q=80',
+          caption: 'Highbush Blueberry Cultivar Ripening in Organic Orchard',
+          created_at: '2026-03-15',
+          selectionIds: ['sel-farming'],
+          tags: ['blueberry', 'harvest', 'fieldwork', 'agriculture']
+        },
+        {
+          id: 'img-farm-2',
+          url: 'https://images.unsplash.com/photo-1524594152303-9fd13543fe6e?auto=format&fit=crop&w=800&q=80',
+          caption: 'Hand-Selected Fresh Blueberry Harvest Prepared for Cold Chain Distribution',
+          created_at: '2026-03-18',
+          selectionIds: ['sel-farming'],
+          tags: ['blueberry', 'harvest', 'logistics']
+        },
+        {
+          id: 'img-farm-3',
+          url: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80',
+          caption: 'Sustainable Precision Fieldwork and Soil Sensor Telemetry Grid',
+          created_at: '2026-03-20',
+          selectionIds: ['sel-farming'],
+          tags: ['fieldwork', 'agriculture', 'sensors', 'irrigation']
+        },
+        {
+          id: 'img-art-1',
+          url: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80',
+          caption: 'Generative Chroma Study: Digital Expressionism and Geometric Forms',
+          created_at: '2026-03-25',
+          selectionIds: ['sel-artwork'],
+          tags: ['artwork', 'generative', 'abstract', 'visual']
+        },
+        {
+          id: 'img-art-2',
+          url: 'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?auto=format&fit=crop&w=800&q=80',
+          caption: 'Botanical Color Harmony & Acrylic Canvas Textures',
+          created_at: '2026-03-28',
+          selectionIds: ['sel-artwork', 'sel-farming'],
+          tags: ['artwork', 'botanical', 'creative']
+        }
+      ] as MediaImage[]
     };
     try {
       const saved = localStorage.getItem('kaitana_custom_state');
@@ -180,6 +249,12 @@ Past background: Developed key modular components for enterprise software suites
         const parsed = JSON.parse(saved);
         if (parsed.user && parsed.user.name === 'Owner Profile') {
           parsed.user.name = 'Malachai Uys';
+        }
+        if (!parsed.selections || parsed.selections.length === 0) {
+          parsed.selections = defaultCustom.selections;
+        }
+        if (!parsed.images || parsed.images.length === 0) {
+          parsed.images = defaultCustom.images;
         }
         return parsed;
       }
@@ -294,6 +369,18 @@ Past background: Developed key modular components for enterprise software suites
     if (activeProfileId === 'vance') setVanceState({ ...vanceState, projects: updatedProjects });
     else if (activeProfileId === 'chen') setChenState({ ...chenState, projects: updatedProjects });
     else setCustomState({ ...customState, projects: updatedProjects });
+  };
+
+  const handleUpdateImages = (updatedImages: MediaImage[]) => {
+    if (activeProfileId === 'vance') setVanceState({ ...vanceState, images: updatedImages });
+    else if (activeProfileId === 'chen') setChenState({ ...chenState, images: updatedImages });
+    else setCustomState({ ...customState, images: updatedImages });
+  };
+
+  const handleUpdateSelections = (updatedSelections: MediaSelection[]) => {
+    if (activeProfileId === 'vance') setVanceState({ ...vanceState, selections: updatedSelections });
+    else if (activeProfileId === 'chen') setChenState({ ...chenState, selections: updatedSelections });
+    else setCustomState({ ...customState, selections: updatedSelections });
   };
 
   const handleUpdateRecommendations = (updatedRecs: Recommendation[]) => {
@@ -557,6 +644,8 @@ Past background: Developed key modular components for enterprise software suites
                 user={currentData.user}
                 files={currentData.files}
                 projects={currentData.projects}
+                images={currentData.images || []}
+                selections={currentData.selections || []}
                 onAddLog={handleAddLog}
                 onOpenExportModal={handleOpenExportModal}
                 onOpenGmailModal={() => setIsGmailModalOpen(true)}
@@ -584,6 +673,17 @@ Past background: Developed key modular components for enterprise software suites
                         onAddLog={handleAddLog}
                       />
                     );
+                  case 'media':
+                    return (
+                      <MediaManager
+                        images={currentData.images || []}
+                        selections={currentData.selections || []}
+                        onUpdateImages={handleUpdateImages}
+                        onUpdateSelections={handleUpdateSelections}
+                        onAddLog={handleAddLog}
+                        userName={currentData.user.name}
+                      />
+                    );
                   case 'chat-test':
                     return (
                       <div className="flex-1 flex flex-col bg-[#0A0A0C]">
@@ -602,6 +702,8 @@ Past background: Developed key modular components for enterprise software suites
                               user={currentData.user}
                               files={currentData.files}
                               projects={currentData.projects}
+                              images={currentData.images || []}
+                              selections={currentData.selections || []}
                               onAddLog={handleAddLog}
                               onOpenExportModal={handleOpenExportModal}
                               onOpenGmailModal={() => setIsGmailModalOpen(true)}
