@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   FileDoc, 
@@ -63,6 +63,21 @@ export default function Dashboard({
   const [newType, setNewType] = useState<FileType>('PDF');
   const [newText, setNewText] = useState('');
   const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
+
+  // Prevent browser default window drag/drop that unloads the application
+  useEffect(() => {
+    const preventWindowDrop = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('dragover', preventWindowDrop);
+    window.addEventListener('drop', preventWindowDrop);
+    return () => {
+      window.removeEventListener('dragover', preventWindowDrop);
+      window.removeEventListener('drop', preventWindowDrop);
+    };
+  }, []);
 
   // Categories helper list
   const categories: (FileCategory | 'ALL')[] = ['ALL', 'CV', 'Portfolio', 'Certification', 'Experience', 'Reference', 'Other'];
@@ -118,36 +133,63 @@ export default function Dashboard({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Direct upload and parsing of actual files
-  const processAndAddFile = (file: File) => {
-    const fileName = file.name;
-    let category: FileCategory = 'CV';
-    let type: FileType = 'PDF';
+  // Batch upload and parsing of actual files with atomic update
+  const processAndAddFiles = async (fileList: FileList | File[]) => {
+    const rawFiles = Array.from(fileList);
+    if (rawFiles.length === 0) return;
 
-    if (fileName.toLowerCase().includes('resume') || fileName.toLowerCase().includes('cv')) {
-      category = 'CV';
-    } else if (fileName.toLowerCase().includes('cert') || fileName.toLowerCase().includes('license')) {
-      category = 'Certification';
-      type = 'PNG';
-    } else if (fileName.toLowerCase().includes('project') || fileName.toLowerCase().includes('spec')) {
-      category = 'Portfolio';
-      type = 'DOCX';
-    } else if (fileName.toLowerCase().includes('bio') || fileName.toLowerCase().includes('story')) {
-      category = 'Experience';
-      type = 'TXT';
-    } else {
-      category = 'Other';
-    }
+    const newDocs: FileDoc[] = [];
 
-    if (fileName.endsWith('.docx')) type = 'DOCX';
-    else if (fileName.endsWith('.pptx')) type = 'PPTX';
-    else if (fileName.endsWith('.zip')) type = 'ZIP';
-    else if (fileName.endsWith('.txt')) type = 'TXT';
-    else if (fileName.endsWith('.md')) type = 'TXT';
-    else if (fileName.endsWith('.json')) type = 'TXT';
+    for (const file of rawFiles) {
+      const fileName = file.name;
+      const lowerName = fileName.toLowerCase();
+      let category: FileCategory = 'CV';
+      let type: FileType = 'PDF';
 
-    const insertDoc = (extractedText: string) => {
-      const newDoc: FileDoc = {
+      // Category detection
+      if (lowerName.includes('resume') || lowerName.includes('cv') || lowerName.includes('curriculum')) {
+        category = 'CV';
+      } else if (lowerName.includes('cert') || lowerName.includes('license') || lowerName.includes('diploma') || lowerName.includes('badge')) {
+        category = 'Certification';
+      } else if (lowerName.includes('project') || lowerName.includes('spec') || lowerName.includes('portfolio') || lowerName.includes('case-study')) {
+        category = 'Portfolio';
+      } else if (lowerName.includes('bio') || lowerName.includes('story') || lowerName.includes('experience') || lowerName.includes('profile')) {
+        category = 'Experience';
+      } else if (lowerName.includes('reference') || lowerName.includes('recommendation') || lowerName.includes('letter')) {
+        category = 'Reference';
+      } else {
+        category = 'Other';
+      }
+
+      // Format/type detection
+      if (lowerName.endsWith('.docx') || lowerName.endsWith('.doc')) type = 'DOCX';
+      else if (lowerName.endsWith('.pptx') || lowerName.endsWith('.ppt')) type = 'PPTX';
+      else if (lowerName.endsWith('.zip') || lowerName.endsWith('.rar') || lowerName.endsWith('.7z') || lowerName.endsWith('.tar') || lowerName.endsWith('.gz')) type = 'ZIP';
+      else if (lowerName.endsWith('.png')) type = 'PNG';
+      else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) type = 'JPG';
+      else if (lowerName.endsWith('.mp4') || lowerName.endsWith('.mov') || lowerName.endsWith('.avi')) type = 'MP4';
+      else if (lowerName.endsWith('.wav') || lowerName.endsWith('.mp3')) type = 'WAV';
+      else if (lowerName.endsWith('.txt') || lowerName.endsWith('.md') || lowerName.endsWith('.json') || lowerName.endsWith('.csv') || lowerName.endsWith('.rtf') || lowerName.endsWith('.yaml') || lowerName.endsWith('.yml') || lowerName.endsWith('.xml') || lowerName.endsWith('.log')) type = 'TXT';
+      else if (lowerName.endsWith('.pdf')) type = 'PDF';
+      else if (category === 'Certification' && (lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg'))) type = 'PNG';
+
+      // Text extraction for RAG grounding
+      let extractedText = '';
+      const isTextFile = file.type.includes('text') || 
+                         /\.(txt|md|markdown|json|csv|rtf|yaml|yml|xml|log|env|html|htm)$/i.test(fileName);
+
+      if (isTextFile) {
+        try {
+          const rawText = await file.text();
+          extractedText = rawText.trim() || `[Verified credentials record for candidate knowledge base: ${fileName}]`;
+        } catch {
+          extractedText = `[VERIFIED VAULT FILE: ${fileName}]\nCategory: ${category} | Format: ${type}\nDirectly indexed in candidate's ground truth database.`;
+        }
+      } else {
+        extractedText = `[VERIFIED VAULT DOCUMENT: ${fileName}]\nCategory: ${category} | Format: ${type}\nFile Size: ${Math.max(1, Math.round(file.size / 1024))} KB\nUploaded: ${new Date().toLocaleDateString()}.\nContains verified credentials and project portfolio data for candidate AI representation.`;
+      }
+
+      const doc: FileDoc = {
         id: `custom-file-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         title: fileName,
         category,
@@ -162,57 +204,62 @@ export default function Dashboard({
         uploadDate: new Date().toISOString().split('T')[0]
       };
 
-      onUpdateFiles([newDoc, ...files]);
+      newDocs.push(doc);
       onAddLog('Vault Injection', `Indexed "${fileName}" (${category}) directly into knowledge base.`, 'success');
-      setToastMessage(`✓ Successfully added "${fileName}" to documents list`);
-      setTimeout(() => setToastMessage(null), 4000);
-    };
-
-    if (file.type.includes('text') || fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.json') || fileName.endsWith('.csv')) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = (event.target?.result as string) || '';
-        insertDoc(text.trim() || `Verified credentials record for candidate knowledge base: ${fileName}`);
-      };
-      reader.onerror = () => {
-        insertDoc(`[VERIFIED VAULT FILE: ${fileName}]\nCategory: ${category}\nDirectly indexed in candidate's ground truth database.`);
-      };
-      reader.readAsText(file);
-    } else {
-      insertDoc(`[VERIFIED VAULT DOCUMENT: ${fileName}]\nCategory: ${category} | Format: ${type}\nUploaded on ${new Date().toLocaleDateString()}.\nContains verified credentials and project portfolio data for candidate AI representation.`);
     }
+
+    // Atomic update to avoid stale closures
+    onUpdateFiles([...newDocs, ...files]);
+    const message = newDocs.length === 1 
+      ? `✓ Successfully added "${newDocs[0].title}" to documents list`
+      : `✓ Successfully added ${newDocs.length} documents to vault`;
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
   // Upload trigger for drag and drop
-  const handleDrag = (e: React.DragEvent) => {
+  const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+    dragCounter.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
       setDragActive(false);
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      for (let i = 0; i < e.dataTransfer.files.length; i++) {
-        const file = e.dataTransfer.files[i];
-        if (file) processAndAddFile(file);
-      }
+    e.dataTransfer.dropEffect = 'copy';
+    if (!dragActive) {
+      setDragActive(true);
     }
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await processAndAddFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      for (let i = 0; i < e.target.files.length; i++) {
-        const file = e.target.files[i];
-        if (file) processAndAddFile(file);
-      }
+      await processAndAddFiles(e.target.files);
       e.target.value = '';
     }
   };
@@ -366,35 +413,40 @@ export default function Dashboard({
         {/* Right main grid representing assets */}
         <div className="lg:col-span-3 space-y-4">
           
-          {/* Drag & Drop mockup uploader */}
+          {/* Drag & Drop target zone */}
           <div
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer relative overflow-hidden ${
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer relative overflow-hidden select-none group ${
               dragActive 
-                ? 'border-indigo-500 bg-indigo-500/10' 
+                ? 'border-indigo-400 bg-indigo-500/20 ring-4 ring-indigo-500/20 scale-[1.01]' 
                 : 'border-white/10 bg-[#0F0F12] hover:bg-[#141418] hover:border-white/20'
             }`}
           >
             <input
+              ref={fileInputRef}
               type="file"
-              id="file-upload-input"
+              multiple
               className="hidden"
               onChange={handleFileInput}
             />
-            <label htmlFor="file-upload-input" className="cursor-pointer">
-              <div className="mx-auto w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform">
-                <Upload className="w-5 h-5 text-indigo-400 pulse-glow-element" />
+            {/* Inner elements with pointer-events-none prevent dragleave flickering */}
+            <div className="pointer-events-none flex flex-col items-center justify-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-105 ${
+                dragActive ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/50' : 'bg-white/5 border border-white/10 text-indigo-400'
+              }`}>
+                <Upload className={`w-5 h-5 ${dragActive ? 'text-white animate-bounce' : 'text-indigo-400 pulse-glow-element'}`} />
               </div>
               <p className="text-xs font-semibold text-white/90 mt-3">
-                Drag-and-drop credentials or portfolio files here
+                {dragActive ? 'Release to upload credentials & documents' : 'Drag-and-drop credentials or portfolio files here'}
               </p>
               <p className="text-[10px] text-white/40 mt-1 uppercase font-mono tracking-wide">
-                Supports PDF • DOCX • Certification Images • ZIP • TXT Factlists
+                Supports PDF • DOCX • Certification Images • ZIP • TXT Factlists (or click to browse)
               </p>
-            </label>
+            </div>
           </div>
 
           {/* Files List Layout */}
