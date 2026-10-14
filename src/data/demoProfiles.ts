@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { UserProfile, FileDoc, PortfolioProject, Recommendation, AuditLog, MediaImage, MediaSelection } from '../types';
+import { UserProfile, FileDoc, PortfolioProject, Recommendation, AuditLog, MediaImage, MediaSelection, JournalData } from '../types';
 
 export interface FullProfile {
   user: UserProfile;
@@ -13,6 +13,7 @@ export interface FullProfile {
   logs: AuditLog[];
   images: MediaImage[];
   selections: MediaSelection[];
+  journal?: JournalData;
 }
 
 export const demoProfiles: Record<string, FullProfile> = {
@@ -226,7 +227,86 @@ In deep waters, navigation and absolute stability are key. This is incredibly si
         selectionIds: ['sel-chaos'],
         tags: ['chaos', 'metrics', 'monitoring', 'netflix']
       }
-    ]
+    ],
+    journal: {
+      profile: {
+        firstName: 'Sarah',
+        surname: 'Vance',
+        age: '33',
+        gender: 'Female',
+        dateOfBirth: '1993-04-14',
+        countryOfResidence: 'United States',
+        programmes: [
+          {
+            id: 'prog-sv-1',
+            degree: 'M.S. in Computer Science',
+            institution: 'Stanford University',
+            startYear: '2015',
+            endYear: '2017',
+            description: 'Focused on distributed consensus systems, cloud fault-tolerance, and active-active database replication.'
+          },
+          {
+            id: 'prog-sv-2',
+            degree: 'B.S. in Software Engineering',
+            institution: 'University of Washington',
+            startYear: '2011',
+            endYear: '2015',
+            description: 'Graduated Summa Cum Laude. Capstone on high-throughput TCP/IP packet routing.'
+          }
+        ],
+        courses: [
+          {
+            id: 'course-sv-1',
+            name: 'AWS Certified Solutions Architect - Professional',
+            provider: 'Amazon Web Services',
+            year: '2025',
+            description: 'Enterprise multi-region disaster recovery, billing optimization, and zero-trust IAM governance.'
+          },
+          {
+            id: 'course-sv-2',
+            name: 'Certified Kubernetes Administrator (CKA)',
+            provider: 'Cloud Native Computing Foundation',
+            year: '2024',
+            description: 'Production cluster networking, Envoy service-mesh ingress, and automated failover.'
+          }
+        ],
+        myStory: '<p>I grew up in the Pacific Northwest fascinated by systems that never sleep. From diving deep-water reefs in Puget Sound to orchestrating multi-region failover at Netflix and AWS, my philosophy is simple: <strong>calm preparation beats heroic firefighting</strong>.</p>',
+        workExperience: [
+          {
+            id: 'work-sv-1',
+            title: 'Principal Cloud Consultant',
+            position: 'Lead / Founder',
+            company: 'InfraCore Consulting',
+            startDate: 'Aug 2024',
+            endDate: 'Present',
+            description: 'Advising Fortune-500 scale startups on multi-region active-active database topologies with Terraform and AWS Aurora.'
+          },
+          {
+            id: 'work-sv-2',
+            title: 'Senior Infrastructure Engineer',
+            position: 'Senior Staff',
+            company: 'Netflix',
+            startDate: 'Jan 2021',
+            endDate: 'Jul 2024',
+            description: 'Co-architected container routing supporting 10M+ concurrent streams and led monthly Chaos Monkey regional failover drills.'
+          }
+        ],
+        awards: ['AWS Global Delivery Excellence Award (2019)', 'UW Dean\'s Medal in Engineering'],
+        sports: ['PADI Divemaster Scuba Diving', 'Open-Water Kayaking'],
+        hobbies: ['Marine Reef Conservation', 'Synthesizer Sound Design']
+      },
+      entries: [
+        {
+          id: 'journal-sv-1',
+          title: 'Why I Treat Cloud Regions Like Deep-Sea Dive Plans',
+          contentHtml: '<h1>Redundancy Is Life</h1><p>With over 350 logged ocean dives as a PADI Divemaster, I learned early that equipment fails when you least expect it. When I design multi-region active-active Aurora clusters, I apply the exact same checklist discipline.</p><h2>Key Principles</h2><ul><li>Never rely on a single availability zone or single oxygen regulator.</li><li>Drill failure scenarios monthly so nobody panics when us-east-1 goes dark.</li></ul>',
+          includeInAI: true,
+          createdAt: '2026-05-01T10:00:00Z',
+          updatedAt: '2026-05-01T10:00:00Z'
+        }
+      ],
+      linkedIn: { connected: false }
+    }
   },
   chen: {
     user: {
@@ -413,6 +493,77 @@ Grid layout: Fluid 12 Columns with variable 24px and 16px row padding based on v
         selectionIds: ['sel-neobank', 'sel-designsys'],
         tags: ['fintech', 'prototyping', 'dashboard', 'ui']
       }
-    ]
+    ],
+    journal: {
+      profile: {
+        firstName: 'Marcus',
+        surname: 'Chen',
+        age: '29',
+        gender: 'Male',
+        dateOfBirth: '1997-08-22',
+        countryOfResidence: 'United States',
+        programmes: [
+          {
+            id: 'prog-mc-1',
+            degree: 'B.F.A. in Graphic & Interactive Design',
+            institution: 'Rhode Island School of Design (RISD)',
+            startYear: '2015',
+            endYear: '2019',
+            description: 'Focused on human-computer interaction, kinetic typography, and accessible digital product systems.'
+          }
+        ],
+        courses: [
+          {
+            id: 'course-mc-1',
+            name: 'NN/g UX Master Certification #104928',
+            provider: 'Nielsen Norman Group',
+            year: '2024',
+            description: 'Empirical usability testing, quantitative conversion research, and cognitive load reduction.'
+          },
+          {
+            id: 'course-mc-2',
+            name: 'Interaction Design Specialist',
+            provider: 'Interaction Design Foundation',
+            year: '2023',
+            description: 'Design token architecture and micro-interaction choreography.'
+          }
+        ],
+        myStory: '<p>I believe financial and enterprise software should feel calm, honest, and tactile. Whether designing billing flows at Stripe or reimagining mobile booking at Airbnb, my craft centers on removing friction so people feel respected by the tools they use.</p>',
+        workExperience: [
+          {
+            id: 'work-mc-1',
+            title: 'Senior Interaction Designer',
+            position: 'Design Lead',
+            company: 'Stripe',
+            startDate: 'Nov 2022',
+            endDate: 'Jan 2026',
+            description: 'Created the Stripe Bloom accessibility design system and redesigned subscriber onboarding, cutting churn by 42%.'
+          },
+          {
+            id: 'work-mc-2',
+            title: 'Product Designer',
+            position: 'Core Booking Experience',
+            company: 'Airbnb',
+            startDate: 'Oct 2019',
+            endDate: 'Oct 2022',
+            description: 'Rebuilt mobile checkout conversion flows and led user studies across 250+ global participants.'
+          }
+        ],
+        awards: ['Stripe Design Excellence Key (2024)', 'RISD Senior Thesis Honors'],
+        sports: ['Bouldering & Indoor Climbing', 'Road Cycling'],
+        hobbies: ['35mm Film Photography', 'Mechanical Keyboards', 'Japanese Woodworking']
+      },
+      entries: [
+        {
+          id: 'journal-mc-1',
+          title: 'Designing Calm Interfaces for High-Stakes Money Flows',
+          contentHtml: '<h1>Why FinTech Forms Feel Stressful</h1><p>When we audited NeoBank\'s KYC flow, 58% of applicants dropped off because the UI felt like an interrogation. Replacing five dense form pages with three conversational cards lifted completion from 42% to 79%.</p>',
+          includeInAI: true,
+          createdAt: '2026-04-20T14:00:00Z',
+          updatedAt: '2026-04-20T14:00:00Z'
+        }
+      ],
+      linkedIn: { connected: false }
+    }
   }
 };

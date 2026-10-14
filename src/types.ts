@@ -140,3 +140,83 @@ export interface GoogleWorkspaceUser {
   displayName?: string | null;
   photoURL?: string | null;
 }
+
+// ==========================================================
+// JOURNAL & STRUCTURED USER PROFILE (AI clone source of truth)
+// ==========================================================
+
+export interface ProgrammeEntry {
+  id: string;
+  degree: string;        // e.g. "BSc Computer Science"
+  institution: string;   // e.g. "University of Zimbabwe"
+  startYear?: string;
+  endYear?: string;
+  description: string;
+}
+
+export interface CourseEntry {
+  id: string;
+  name: string;
+  provider: string;
+  year?: string;
+  description: string;
+}
+
+export interface WorkExperienceEntry {
+  id: string;
+  title: string;      // Job title, e.g. "Software Engineer"
+  position: string;   // Level / position, e.g. "Senior", "Team Lead"
+  company: string;
+  startDate?: string;
+  endDate?: string;
+  description: string;
+}
+
+export interface JournalUserProfile {
+  firstName: string;
+  surname: string;
+  age: string;
+  gender: string;
+  dateOfBirth: string;
+  countryOfResidence: string;
+  programmes: ProgrammeEntry[];
+  courses: CourseEntry[];
+  myStory: string; // rich text (HTML)
+  workExperience: WorkExperienceEntry[];
+  awards: string[];
+  sports: string[];
+  hobbies: string[];
+  updatedAt?: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  title: string;
+  contentHtml: string;     // Rich document body (HTML from the editor)
+  includeInAI: boolean;    // Whether this entry feeds the AI clone context
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JournalData {
+  profile: JournalUserProfile;
+  entries: JournalEntry[];
+  linkedIn?: LinkedInConnectionState;
+}
+
+// Future LinkedIn integration hook
+export type LinkedInImportField = 'about' | 'education' | 'experience' | 'courses' | 'awards';
+
+export interface LinkedInConnectionState {
+  connected: boolean;
+  profileUrl?: string;
+  lastImportedAt?: string;
+}
+
+export interface LinkedInImportPayload {
+  about?: string;
+  education?: Array<{ school: string; degree: string; fieldOfStudy?: string; startYear?: string; endYear?: string; description?: string }>;
+  positions?: Array<{ title: string; companyName: string; seniority?: string; startDate?: string; endDate?: string; description?: string }>;
+  courses?: Array<{ name: string; provider?: string; year?: string }>;
+  honors?: string[];
+}

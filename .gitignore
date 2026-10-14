@@ -10,3 +10,5 @@ uploads/*
 !uploads/.gitkeep
 data/media/*
 !data/media/.gitkeep
+data/journal/*
+!data/journal/.gitkeep

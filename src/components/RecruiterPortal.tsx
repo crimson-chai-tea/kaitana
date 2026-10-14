@@ -13,7 +13,8 @@ import {
   MediaImage,
   MediaSelection,
   TtsPreferences,
-  SupportedTtsLanguage
+  SupportedTtsLanguage,
+  JournalData
 } from '../types';
 import { 
   Bot, 
@@ -63,6 +64,7 @@ interface RecruiterPortalProps {
   projects: PortfolioProject[];
   images?: MediaImage[];
   selections?: MediaSelection[];
+  journal?: JournalData;
   onAddLog: (action: string, details: string, status: 'info' | 'success' | 'warning') => void;
   onOpenExportModal?: (messages: ChatMessage[]) => void;
   onOpenGmailModal?: () => void;
@@ -76,6 +78,7 @@ export default function RecruiterPortal({
   projects, 
   images = [],
   selections = [],
+  journal,
   onAddLog,
   onOpenExportModal,
   onOpenGmailModal,
@@ -251,12 +254,14 @@ Feel free to ask me anything about my work experience, specific project architec
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          profileId: user.id,
           profileName: user.name,
           userBio: user.bio,
           messages: [...messages, userMsg].map(m => ({ role: m.role, text: m.text })),
           files: files, // passing exact current files for genuine RAG!
           mediaImages: images,
-          mediaSelections: selections
+          mediaSelections: selections,
+          journal: journal
         })
       });
 

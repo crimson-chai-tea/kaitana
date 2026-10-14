@@ -10,6 +10,7 @@ import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
+import { buildJournalContext, normalizeJournal } from './src/lib/journal';
 
 dotenv.config();
 
@@ -31,6 +32,13 @@ async function startServer() {
   if (!fs.existsSync(mediaStorageDir)) {
     fs.mkdirSync(mediaStorageDir, { recursive: true });
   }
+
+  const journalStorageDir = path.join(process.cwd(), 'data', 'journal');
+  if (!fs.existsSync(journalStorageDir)) {
+    fs.mkdirSync(journalStorageDir, { recursive: true });
+  }
+  const journalFilePath = (profileId: string) =>
+    path.join(journalStorageDir, `${String(profileId).replace(/[^a-zA-Z0-9_-]/g, '') || 'custom'}.json`);
 
   // Initialize Gemini SDK with telemetry User-Agent header
   const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -233,7 +241,7 @@ Format the output clearly as clean, structured text with clear headings and bull
 
   // 3. API: SHADOW INTERVIEW RAG CHATBOT (WITH VISUAL MEDIA RETRIEVAL LAYER)
   app.post('/api/chat', async (req, res) => {
-    const { profileName, userBio, messages, files, mediaImages, mediaSelections } = req.body;
+    const { profileName, userBio, messages, files, mediaImages, mediaSelections, journal, profileId } = req.body;
 
     if (!ai) {
       return res.status(200).json({
@@ -278,17 +286,39 @@ Format the output clearly as clean, structured text with clear headings and bull
           `\n\nALL AVAILABLE MEDIA SEARCH TAGS (Specific Detail Tags):\n[${allAvailableTags.join(', ')}]`;
       }
 
+      // ---------- JOURNAL (AUTHORITATIVE SOURCE OF TRUTH) ----------
+      // Prefer the journal sent by the client (always freshest); otherwise fall back to server-persisted copy.
+      let journalData: any = journal;
+      if (!journalData && profileId) {
+        try {
+          const jp = journalFilePath(profileId);
+          if (fs.existsSync(jp)) journalData = JSON.parse(await fs.promises.readFile(jp, 'utf-8'));
+        } catch (e) {
+          console.warn('Could not load stored journal for chat context:', e);
+        }
+      }
+      const journalContext = journalData ? buildJournalContext(normalizeJournal(journalData, profileName)) : '';
+      const JOURNAL_SOURCE_LABEL = 'Kaitana_Journal (Primary Source)';
+
       // Construct the structured prompt enforcing strict zero-hallucination policies
       const systemPrompt = `You are the verified digital AI "Shadow" representing ${profileName} in a job interview / recruitment discussion.
 Their background, context, and philosophical statements: "${userBio}".
 
 CRITICAL DISCIPLINE:
-You must speak ONLY on behalf of ${profileName} and answer recruiter questions conversationally using ONLY the provided verified database below.
+You must speak ONLY on behalf of ${profileName} and answer recruiter questions conversationally using ONLY the provided verified sources below (the JOURNAL and the DATABASE OF VERIFIED DOCUMENTS).
 - DO NOT hallucinate.
 - DO NOT invent, assume, extrapolate, or embellish achievements, projects, or background.
-- If the recruiter's prompt asks for details not directly verified in the databases below, or if you cannot find a clear factual reference to back it up, you must immediately return an isUnavailable flag set to true and output exactly: "The user has not provided verified information on that topic."
-- Do not make up answers even if they seem minor or logical (e.g., standard tools, specific libraries) unless they are in the database.
-- You must reference real file sources in your answer when available.
+- If the recruiter's prompt asks for details not directly verified in the sources below, or if you cannot find a clear factual reference to back it up, you must immediately return an isUnavailable flag set to true and output exactly: "The user has not provided verified information on that topic."
+- Do not make up answers even if they seem minor or logical (e.g., standard tools, specific libraries) unless they are in the sources.
+- You must reference real sources in your answer when available.
+
+SOURCE HIERARCHY & CONFLICT RESOLUTION (MANDATORY):
+1. The CANDIDATE JOURNAL (structured User Profile + free-form Journal pages) is written directly by ${profileName} inside Kaitana and is the PRIMARY, AUTHORITATIVE source of truth.
+2. Uploaded documents (CVs, resumes, certificates, portfolios) are SECONDARY sources.
+3. If the Journal and any uploaded document disagree on ANY fact (e.g., age, date of birth, name spelling, country, job titles, dates, employers, degrees, institutions), you MUST use the Journal's value and silently disregard the conflicting document value. Never present both values, never mention the conflict, and never "average" them.
+4. Use uploaded documents only to ADD detail that the Journal does not cover.
+5. When an answer draws on the Journal, include "${JOURNAL_SOURCE_LABEL}" in the citations array.
+6. Personal details (age, gender, date of birth, country) may ONLY be shared if present in the Journal or documents; otherwise treat them as unavailable.
 
 VISUAL MEDIA RETRIEVAL DIRECTIVE:
 You have access to ${profileName}'s verified visual media catalog containing curated Selections and tagged images.
@@ -300,7 +330,12 @@ When the recruiter explicitly or conversationally asks for visual evidence, phot
 3. No Media Requested:
    If the recruiter is not requesting visual evidence or no matching selection or tag exists in the catalog, set "mediaQuery": { "type": "none", "target": "" }.
 
-DATABASE OF VERIFIED DOCUMENTS:
+CANDIDATE JOURNAL — PRIMARY SOURCE OF TRUTH (overrides all documents):
+==================================
+${journalContext || 'The candidate has not filled in their Journal yet.'}
+==================================
+
+DATABASE OF VERIFIED DOCUMENTS (secondary — Journal wins on any conflict):
 ==================================
 ${dbContext}
 ==================================
@@ -319,10 +354,10 @@ ${conversationHistory}
 
 Recruiter is asking now: "${lastUserMsg}"
 
-Examine the database and visual catalog carefully. Return a JSON structure containing:
-1. "answer": Your helpful, professional, conversational response grounded ONLY in the database, written in 1st/3rd person representing ${profileName}. If visual media is retrieved, briefly introduce it in your response. Or "The user has not provided verified information on that topic." if missing.
-2. "citations": An array of file titles (e.g., ["Sarah_Vance_Resume_2026.pdf"]) which were actually scanned and verified to produce this answer. Leave empty if information is not found.
-3. "isUnavailable": Boolean set to true if the question is unanswerable from the database (visual media queries for items present in the visual catalog are valid and NOT unavailable).
+Examine the Journal (primary), document database (secondary), and visual catalog carefully. Remember: on any conflict, the Journal wins. Return a JSON structure containing:
+1. "answer": Your helpful, professional, conversational response grounded ONLY in the Journal and database, written in 1st/3rd person representing ${profileName}. If visual media is retrieved, briefly introduce it in your response. Or "The user has not provided verified information on that topic." if missing.
+2. "citations": An array of source titles (e.g., ["${JOURNAL_SOURCE_LABEL}", "Sarah_Vance_Resume_2026.pdf"]) which were actually used to produce this answer. Leave empty if information is not found.
+3. "isUnavailable": Boolean set to true if the question is unanswerable from the Journal or database (visual media queries for items present in the visual catalog are valid and NOT unavailable).
 4. "mediaQuery": { "type": "selection" | "tag" | "none", "target": string }`;
 
       const response = await generateWithModelFallback(ai, {
@@ -554,6 +589,59 @@ Examine the database and visual catalog carefully. Return a JSON structure conta
       console.error('Load media all error:', err);
       return res.status(500).json({ error: 'Failed to load media profile' });
     }
+  });
+
+  // 7b. API: JOURNAL PERSISTENCE (User Profile questionnaire + workspace pages)
+  app.post('/api/journal/save', async (req, res) => {
+    try {
+      const { profileId = 'custom', journal } = req.body;
+      if (!journal || typeof journal !== 'object') {
+        return res.status(400).json({ success: false, error: 'Missing journal payload' });
+      }
+      const payload = { ...journal, savedAt: new Date().toISOString() };
+      await fs.promises.writeFile(journalFilePath(profileId), JSON.stringify(payload, null, 2), 'utf-8');
+      return res.json({ success: true, savedAt: payload.savedAt, entries: (journal.entries || []).length });
+    } catch (err: any) {
+      console.error('Journal save error:', err);
+      return res.status(500).json({ success: false, error: 'Failed to persist journal' });
+    }
+  });
+
+  app.get('/api/journal/:profileId', async (req, res) => {
+    try {
+      const fp = journalFilePath(req.params.profileId);
+      if (!fs.existsSync(fp)) return res.json({ success: false, journal: null });
+      const journal = JSON.parse(await fs.promises.readFile(fp, 'utf-8'));
+      return res.json({ success: true, journal });
+    } catch (err: any) {
+      console.error('Journal load error:', err);
+      return res.status(500).json({ success: false, error: 'Failed to load journal' });
+    }
+  });
+
+  // 7c. API: LINKEDIN INTEGRATION — FOUNDATION STUBS
+  // TODO(linkedin): implement OAuth 2.0 (auth-url + callback) using LINKEDIN_CLIENT_ID / LINKEDIN_CLIENT_SECRET
+  // from .env, store the access token server-side per profile, then fetch & map profile data in /import.
+  const linkedInConfigured = !!(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET);
+
+  app.get('/api/linkedin/status/:profileId', (req, res) => {
+    res.json({
+      enabled: false,
+      configured: linkedInConfigured,
+      connected: false,
+      message: linkedInConfigured
+        ? 'LinkedIn credentials detected, but the import flow is not yet activated.'
+        : 'LinkedIn import is coming soon.'
+    });
+  });
+
+  app.get('/api/linkedin/auth-url', (req, res) => {
+    res.status(501).json({ url: null, message: 'LinkedIn OAuth is not implemented yet.' });
+  });
+
+  app.post('/api/linkedin/import', (req, res) => {
+    // Expected future response shape: { success: true, payload: LinkedInImportPayload }
+    res.status(501).json({ success: false, message: 'LinkedIn import is coming soon. The integration hook is ready but not yet activated.' });
   });
 
   // 8. API: AUDIO TRANSCRIPTION (VOICE-TO-TEXT)

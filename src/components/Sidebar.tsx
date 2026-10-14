@@ -13,7 +13,8 @@ import {
   Edit2,
   X,
   Save,
-  Image as ImageIcon
+  Image as ImageIcon,
+  NotebookPen
 } from 'lucide-react';
 import { UserProfile, GoogleWorkspaceUser } from '../types';
 
@@ -74,6 +75,7 @@ export default function Sidebar({
   };
 
   const menuItems = [
+    { id: 'journal', label: 'Journal', icon: NotebookPen, desc: 'User profile & doc workspace' },
     { id: 'database', label: 'Knowledge Vault', icon: Database, desc: 'Manage verified files & text' },
     { id: 'projects', label: 'Portfolio Projects', icon: Award, desc: 'Configure key highlights' },
     { id: 'media', label: 'Visual Showcase', icon: ImageIcon, desc: 'Manage visual work & selections' },

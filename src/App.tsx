@@ -14,8 +14,10 @@ import {
   ChatMessage,
   GoogleWorkspaceUser,
   MediaImage,
-  MediaSelection 
+  MediaSelection,
+  JournalData
 } from './types';
+import { normalizeJournal } from './lib/journal';
 
 // Google Workspace Services & Modals
 import { 
@@ -33,6 +35,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Projects from './components/Projects';
 import MediaManager from './components/MediaManager';
+import Journal from './components/Journal';
 import RecruiterPortal from './components/RecruiterPortal';
 import PortfolioAudit from './components/PortfolioAudit';
 import Logs from './components/Logs';
@@ -104,6 +107,7 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (!parsed.images || parsed.images.length === 0) parsed.images = demoProfiles.vance.images;
         if (!parsed.selections || parsed.selections.length === 0) parsed.selections = demoProfiles.vance.selections;
+        if (!parsed.journal) parsed.journal = demoProfiles.vance.journal;
         return parsed;
       }
       return demoProfiles.vance;
@@ -119,6 +123,7 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (!parsed.images || parsed.images.length === 0) parsed.images = demoProfiles.chen.images;
         if (!parsed.selections || parsed.selections.length === 0) parsed.selections = demoProfiles.chen.selections;
+        if (!parsed.journal) parsed.journal = demoProfiles.chen.journal;
         return parsed;
       }
       return demoProfiles.chen;
@@ -241,7 +246,62 @@ Past background: Developed key modular components for enterprise software suites
           selectionIds: ['sel-artwork', 'sel-farming'],
           tags: ['artwork', 'botanical', 'creative']
         }
-      ] as MediaImage[]
+      ] as MediaImage[],
+      journal: {
+        profile: {
+          firstName: 'Malachai',
+          surname: 'Uys',
+          age: '24',
+          gender: 'Male',
+          dateOfBirth: '2002-06-15',
+          countryOfResidence: 'South Africa',
+          programmes: [
+            {
+              id: 'prog-custom-1',
+              degree: 'BSc Computer Science & Agri-Tech Systems',
+              institution: 'Stellenbosch University',
+              startYear: '2021',
+              endYear: '2025',
+              description: 'Specialized in distributed backend systems, AI agent orchestration, and precision agriculture telemetry.'
+            }
+          ],
+          courses: [
+            {
+              id: 'course-custom-1',
+              name: 'Certified Cloud Security Architect',
+              provider: 'Cloud Security Alliance',
+              year: '2025',
+              description: 'Zero-trust microservice architecture and cryptographic credential verification.'
+            }
+          ],
+          myStory: '<p>Growing up in the Western Cape, I split my time between software engineering and sustainable blueberry farming. Building Kaitana came from wanting a verified, zero-hallucination way for creators and engineers to let their real work speak for itself.</p>',
+          workExperience: [
+            {
+              id: 'work-custom-1',
+              title: 'Senior Software Engineer & Tech Lead',
+              position: 'Lead Engineer',
+              company: 'Kaitana Labs',
+              startDate: 'Jan 2025',
+              endDate: 'Present',
+              description: 'Architected the Kaitana grounded AI clone engine, multi-language TTS pipeline, and visual media vault.'
+            }
+          ],
+          awards: ['Kaitana Verified Developer Pioneer'],
+          sports: ['Trail Running', 'Rugby'],
+          hobbies: ['Precision Blueberry Farming', 'Generative Art', 'Specialty Coffee Roasting']
+        },
+        entries: [
+          {
+            id: 'journal-custom-1',
+            title: 'Building Grounded AI Clones & Sustainable Orchards',
+            contentHtml: '<h1>My Personal Workspace</h1><p>This journal is the primary source of truth for my AI shadow clone. Any facts I record here take strict precedence over older PDFs or resumes in my Knowledge Vault.</p>',
+            includeInAI: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ],
+        linkedIn: { connected: false }
+      } as JournalData
     };
     try {
       const saved = localStorage.getItem('kaitana_custom_state');
@@ -255,6 +315,9 @@ Past background: Developed key modular components for enterprise software suites
         }
         if (!parsed.images || parsed.images.length === 0) {
           parsed.images = defaultCustom.images;
+        }
+        if (!parsed.journal) {
+          parsed.journal = defaultCustom.journal;
         }
         return parsed;
       }
@@ -381,6 +444,32 @@ Past background: Developed key modular components for enterprise software suites
     if (activeProfileId === 'vance') setVanceState({ ...vanceState, projects: updatedProjects });
     else if (activeProfileId === 'chen') setChenState({ ...chenState, projects: updatedProjects });
     else setCustomState({ ...customState, projects: updatedProjects });
+  };
+
+  const handleUpdateJournal = (updatedJournal: JournalData) => {
+    const fullName = [updatedJournal.profile.firstName, updatedJournal.profile.surname]
+      .map(s => s.trim())
+      .filter(Boolean)
+      .join(' ');
+    if (activeProfileId === 'vance') {
+      setVanceState((prev: any) => ({
+        ...prev,
+        user: fullName ? { ...prev.user, name: fullName } : prev.user,
+        journal: updatedJournal
+      }));
+    } else if (activeProfileId === 'chen') {
+      setChenState((prev: any) => ({
+        ...prev,
+        user: fullName ? { ...prev.user, name: fullName } : prev.user,
+        journal: updatedJournal
+      }));
+    } else {
+      setCustomState((prev: any) => ({
+        ...prev,
+        user: fullName ? { ...prev.user, name: fullName } : prev.user,
+        journal: updatedJournal
+      }));
+    }
   };
 
   const handleUpdateImages = (updatedImages: MediaImage[]) => {
@@ -688,6 +777,7 @@ Past background: Developed key modular components for enterprise software suites
                 projects={currentData.projects}
                 images={currentData.images || []}
                 selections={currentData.selections || []}
+                journal={normalizeJournal(currentData.journal, currentData.user.name)}
                 onAddLog={handleAddLog}
                 onOpenExportModal={handleOpenExportModal}
                 onOpenGmailModal={() => setIsGmailModalOpen(true)}
@@ -697,6 +787,16 @@ Past background: Developed key modular components for enterprise software suites
             ) : (
               (() => {
                 switch(activeTab) {
+                  case 'journal':
+                    return (
+                      <Journal
+                        profileId={activeProfileId}
+                        userName={currentData.user.name}
+                        journal={normalizeJournal(currentData.journal, currentData.user.name)}
+                        onUpdateJournal={handleUpdateJournal}
+                        onAddLog={handleAddLog}
+                      />
+                    );
                   case 'database':
                     return (
                       <Dashboard 
@@ -747,6 +847,7 @@ Past background: Developed key modular components for enterprise software suites
                               projects={currentData.projects}
                               images={currentData.images || []}
                               selections={currentData.selections || []}
+                              journal={normalizeJournal(currentData.journal, currentData.user.name)}
                               onAddLog={handleAddLog}
                               onOpenExportModal={handleOpenExportModal}
                               onOpenGmailModal={() => setIsGmailModalOpen(true)}
