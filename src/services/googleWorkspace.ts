@@ -212,7 +212,44 @@ export const fetchDriveFileContent = async (
     }
   }
 
-  // For PDF and binary documents, fetch metadata and generate an indexing descriptor
+  // For PDF and binary documents, fetch media buffer and parse with AI
+  try {
+    const mediaRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (mediaRes.ok) {
+      const blob = await mediaRes.blob();
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const res = reader.result as string;
+          resolve(res.split(',')[1] || '');
+        };
+        reader.readAsDataURL(blob);
+      });
+
+      const parseRes = await fetch('/api/parse-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: `Drive_File_${fileId}`,
+          mimeType,
+          fileBase64: base64
+        })
+      });
+
+      if (parseRes.ok) {
+        const parsed = await parseRes.json();
+        if (parsed.extractedText && parsed.extractedText.trim().length > 0) {
+          return { text: parsed.extractedText };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Drive binary parsing fallback:', err);
+  }
+
+  // Fallback to metadata descriptor
   const metaRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=name,description,properties`, {
     headers: { Authorization: `Bearer ${token}` }
   });

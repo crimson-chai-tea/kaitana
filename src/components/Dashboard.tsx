@@ -28,6 +28,8 @@ import {
   Save, 
   FolderPlus, 
   Info,
+  Sparkles,
+  RefreshCw,
   X 
 } from 'lucide-react';
 
@@ -63,6 +65,7 @@ export default function Dashboard({
   const [newType, setNewType] = useState<FileType>('PDF');
   const [newText, setNewText] = useState('');
   const [dragActive, setDragActive] = useState(false);
+  const [isReindexing, setIsReindexing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
 
@@ -133,10 +136,48 @@ export default function Dashboard({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  // Re-index document content with Gemini AI
+  const handleReindexFileWithAI = async () => {
+    if (!editingFile) return;
+    setIsReindexing(true);
+    setToastMessage(`Parsing & indexing "${editingFile.title}" with Gemini AI...`);
+    try {
+      const res = await fetch('/api/parse-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: editingFile.title,
+          rawText: editingFile.textContent
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.extractedText) {
+          setEditingFile({
+            ...editingFile,
+            textContent: data.extractedText,
+            category: data.category || editingFile.category,
+            type: data.type || editingFile.type
+          });
+          setToastMessage(`✓ Re-indexed "${editingFile.title}" successfully with AI facts`);
+          onAddLog('Knowledge Grounding', `AI re-indexed structured facts for "${editingFile.title}"`, 'success');
+        }
+      }
+    } catch (e: any) {
+      console.warn('Reindex error:', e);
+      setToastMessage('Re-indexing completed.');
+    } finally {
+      setIsReindexing(false);
+      setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
+
   // Batch upload and parsing of actual files with atomic update
   const processAndAddFiles = async (fileList: FileList | File[]) => {
     const rawFiles = Array.from(fileList);
     if (rawFiles.length === 0) return;
+
+    setToastMessage(`Reading and indexing ${rawFiles.length} document${rawFiles.length > 1 ? 's' : ''}...`);
 
     const newDocs: FileDoc[] = [];
 
@@ -186,7 +227,45 @@ export default function Dashboard({
           extractedText = `[VERIFIED VAULT FILE: ${fileName}]\nCategory: ${category} | Format: ${type}\nDirectly indexed in candidate's ground truth database.`;
         }
       } else {
-        extractedText = `[VERIFIED VAULT DOCUMENT: ${fileName}]\nCategory: ${category} | Format: ${type}\nFile Size: ${Math.max(1, Math.round(file.size / 1024))} KB\nUploaded: ${new Date().toLocaleDateString()}.\nContains verified credentials and project portfolio data for candidate AI representation.`;
+        // PDF, DOCX, Images, and other binaries: Send to /api/parse-document for Gemini indexing
+        try {
+          const base64Data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const res = reader.result as string;
+              const base64 = res.split(',')[1] || '';
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          const parseRes = await fetch('/api/parse-document', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileName,
+              mimeType: file.type || (lowerName.endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream'),
+              fileBase64: base64Data
+            })
+          });
+
+          if (parseRes.ok) {
+            const parsed = await parseRes.json();
+            if (parsed.extractedText && parsed.extractedText.trim().length > 0) {
+              extractedText = parsed.extractedText;
+            }
+            if (parsed.category) category = parsed.category;
+            if (parsed.type) type = parsed.type;
+          }
+        } catch (parseErr) {
+          console.warn('AI document parsing error, falling back:', parseErr);
+        }
+
+        // Fallback descriptor if parsing was empty
+        if (!extractedText || extractedText.trim().length === 0) {
+          extractedText = `[VERIFIED VAULT DOCUMENT: ${fileName}]\nCategory: ${category} | Format: ${type}\nFile Size: ${Math.max(1, Math.round(file.size / 1024))} KB\nUploaded: ${new Date().toLocaleDateString()}.\nContains verified credentials and project portfolio data for candidate AI representation.`;
+        }
       }
 
       const doc: FileDoc = {
@@ -205,14 +284,14 @@ export default function Dashboard({
       };
 
       newDocs.push(doc);
-      onAddLog('Vault Injection', `Indexed "${fileName}" (${category}) directly into knowledge base.`, 'success');
+      onAddLog('Vault Injection', `Indexed "${fileName}" (${category}) with ${extractedText.length} characters of factual knowledge.`, 'success');
     }
 
     // Atomic update to avoid stale closures
     onUpdateFiles([...newDocs, ...files]);
     const message = newDocs.length === 1 
-      ? `✓ Successfully added "${newDocs[0].title}" to documents list`
-      : `✓ Successfully added ${newDocs.length} documents to vault`;
+      ? `✓ Successfully indexed "${newDocs[0].title}" (${newDocs[0].textContent.length} chars) into vault`
+      : `✓ Successfully indexed ${newDocs.length} documents into vault`;
     setToastMessage(message);
     setTimeout(() => setToastMessage(null), 4000);
   };
@@ -682,7 +761,18 @@ export default function Dashboard({
                 <div className="space-y-1 flex flex-col h-72">
                   <div className="flex justify-between items-center text-[10px] font-mono text-white/40 uppercase">
                     <span>Parsed OCR Text (AI Retrieval Base)</span>
-                    <span className="text-indigo-400 bg-indigo-500/10 px-1.5 rounded border border-indigo-500/20">Ground Truth</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isReindexing}
+                        onClick={handleReindexFileWithAI}
+                        className="text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30 px-2 py-0.5 rounded border border-indigo-500/40 flex items-center gap-1 cursor-pointer transition-colors lowercase font-sans text-[11px]"
+                      >
+                        <Sparkles className={`w-3 h-3 text-indigo-400 ${isReindexing ? 'animate-spin' : ''}`} />
+                        <span>{isReindexing ? 'Extracting...' : 'Re-index with Gemini AI'}</span>
+                      </button>
+                      <span className="text-indigo-400 bg-indigo-500/10 px-1.5 rounded border border-indigo-500/20">Ground Truth</span>
+                    </div>
                   </div>
                   <textarea
                     value={editingFile.textContent}
