@@ -19,6 +19,8 @@ import {
   Network, 
   Sparkles, 
   Mic, 
+  MicOff,
+  Loader2,
   Cpu, 
   CheckCircle, 
   BookOpen, 
@@ -62,11 +64,16 @@ export default function RecruiterPortal({
   const [isTyping, setIsTyping] = useState(false);
   const [selectedFileFilter, setSelectedFileFilter] = useState<'All' | 'CV' | 'Certification' | 'Portfolio'>('All');
   const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [sessionUnlockedFiles, setSessionUnlockedFiles] = useState<string[]>([]);
   const [showDownloadFeedback, setShowDownloadFeedback] = useState<string | null>(null);
   const [voiceNotification, setVoiceNotification] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
 
   // Initialize the AI Concierge Greeting
   useEffect(() => {
@@ -220,21 +227,211 @@ Feel free to ask me anything about my work experience, specific project architec
     }, 1500);
   };
 
-  // Simulated Voice Interview Toggle
-  const toggleVoiceMode = () => {
-    if (!isVoiceActive) {
+  // Stop any active audio recording/recognition
+  const stopAudioCapture = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // ignore
+      }
+      recognitionRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+
+    setIsVoiceActive(false);
+  };
+
+  // Cleanup audio tracks on unmount
+  useEffect(() => {
+    return () => {
+      stopAudioCapture();
+    };
+  }, []);
+
+  // Real-time Voice to Text Handler (Web Speech API with Gemini Cloud Audio Fallback)
+  const toggleVoiceMode = async () => {
+    if (isVoiceActive || isTranscribing) {
+      stopAudioCapture();
+      setVoiceNotification('✓ Voice recording stopped.');
+      setTimeout(() => setVoiceNotification(null), 3000);
+      return;
+    }
+
+    onAddLog('Audio Engagement', `Recruiter opened live audio voice transcription`, 'info');
+
+    // Method 1: Web Speech API (Chrome, Edge, Safari, Chromium)
+    const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (SpeechRecognitionClass) {
+      try {
+        const recognition = new SpeechRecognitionClass();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+          setIsVoiceActive(true);
+          setVoiceNotification('🎙️ Listening... Speak into your microphone');
+        };
+
+        recognition.onresult = (event: any) => {
+          let interimTranscript = '';
+          let finalTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript;
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+
+          const currentSpeech = (finalTranscript || interimTranscript).trim();
+          if (currentSpeech) {
+            setInputText(currentSpeech);
+            setVoiceNotification(`🎙️ Live: "${currentSpeech.slice(-45)}"`);
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          console.warn('Speech recognition event error:', event.error);
+          if (event.error === 'not-allowed') {
+            setVoiceNotification('⚠️ Microphone access denied. Please grant microphone permission in browser.');
+            stopAudioCapture();
+          } else if (event.error === 'no-speech') {
+            setVoiceNotification('⚠️ No speech detected. Please speak closer to microphone.');
+          } else {
+            // Fallback to MediaRecorder + Gemini
+            startMediaRecorderFallback();
+          }
+        };
+
+        recognition.onend = () => {
+          setIsVoiceActive(false);
+          setVoiceNotification('✓ Voice capture complete. Ready to send!');
+          setTimeout(() => setVoiceNotification(null), 4000);
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+        return;
+      } catch (err) {
+        console.warn('SpeechRecognition failed to start, falling back to MediaRecorder:', err);
+      }
+    }
+
+    // Method 2: Fallback with MediaRecorder + Gemini Cloud Audio Transcription
+    await startMediaRecorderFallback();
+  };
+
+  const startMediaRecorderFallback = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setVoiceNotification('⚠️ Microphone capture not supported in this browser environment.');
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
+        ? 'audio/webm' 
+        : MediaRecorder.isTypeSupported('audio/mp4') 
+          ? 'audio/mp4' 
+          : 'audio/wav';
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach(t => t.stop());
+          mediaStreamRef.current = null;
+        }
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        if (audioBlob.size < 500) {
+          setIsTranscribing(false);
+          setIsVoiceActive(false);
+          setVoiceNotification('⚠️ Recording was too brief.');
+          setTimeout(() => setVoiceNotification(null), 3000);
+          return;
+        }
+
+        setIsTranscribing(true);
+        setVoiceNotification('⏳ Transcribing audio with Gemini AI...');
+
+        try {
+          const base64Data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const res = reader.result as string;
+              resolve(res.split(',')[1] || '');
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(audioBlob);
+          });
+
+          const response = await fetch('/api/transcribe-audio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              audioBase64: base64Data,
+              mimeType
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.text) {
+              setInputText(data.text);
+              setVoiceNotification(`✓ Transcribed: "${data.text.slice(0, 50)}${data.text.length > 50 ? '...' : ''}"`);
+              onAddLog('Audio Transcription', `Transcribed voice input via Gemini AI (${data.text.length} chars)`, 'success');
+            } else {
+              setVoiceNotification('⚠️ No clear speech recognized in audio.');
+            }
+          } else {
+            setVoiceNotification('⚠️ Failed to transcribe audio on server.');
+          }
+        } catch (err: any) {
+          console.error('Audio transcription error:', err);
+          setVoiceNotification(`⚠️ Transcription error: ${err.message || 'Network failure'}`);
+        } finally {
+          setIsTranscribing(false);
+          setIsVoiceActive(false);
+          setTimeout(() => setVoiceNotification(null), 4000);
+        }
+      };
+
+      mediaRecorder.start();
       setIsVoiceActive(true);
-      onAddLog('Audio Engagement', `Recruiter opened real-time phonetic shadow simulation`, 'info');
-      // Simulate a voice query arriving after 3 seconds
-      setTimeout(() => {
-        if (!isVoiceActive) return;
-        setInputText("State your principal background achievements and educational credentials.");
-        setIsVoiceActive(false);
-        setVoiceNotification("🎤 Audio transcription complete. Ready to send!");
-        setTimeout(() => setVoiceNotification(null), 4000);
-      }, 3500);
-    } else {
+      setVoiceNotification('🎙️ Recording audio... Click mic icon again to stop & transcribe.');
+    } catch (err: any) {
+      console.error('Microphone access failed:', err);
       setIsVoiceActive(false);
+      setVoiceNotification(`⚠️ Microphone access error: ${err.message || 'Permission denied'}`);
+      setTimeout(() => setVoiceNotification(null), 4000);
     }
   };
 
@@ -585,22 +782,30 @@ Feel free to ask me anything about my work experience, specific project architec
               <button
                 type="button"
                 onClick={toggleVoiceMode}
+                disabled={isTranscribing}
                 className={`p-3 rounded-xl transition-all border shrink-0 cursor-pointer ${
                   isVoiceActive 
-                    ? 'bg-purple-950/30 border-purple-500/40 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.3)]' 
-                    : 'bg-[#141418] border-white/5 text-white/40 hover:text-indigo-400'
+                    ? 'bg-rose-950/40 border-rose-500/60 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.4)] animate-pulse' 
+                    : isTranscribing
+                      ? 'bg-purple-950/30 border-purple-500/40 text-purple-400'
+                      : 'bg-[#141418] border-white/5 text-white/40 hover:text-indigo-400'
                 }`}
-                title="Trigger simulated phonetic mic interview"
+                title={isVoiceActive ? "Click to stop listening" : isTranscribing ? "Transcribing speech..." : "Click to speak with microphone"}
               >
-                <Mic className={`w-4 h-4 ${isVoiceActive ? 'animate-pulse' : ''}`} />
+                {isTranscribing ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
+                ) : isVoiceActive ? (
+                  <MicOff className="w-4 h-4 text-rose-400" />
+                ) : (
+                  <Mic className="w-4 h-4" />
+                )}
               </button>
 
               <input
                 type="text"
-                placeholder={isVoiceActive ? "Listening to mic..." : "Ask shadow concierge about work, coding skills..."}
+                placeholder={isVoiceActive ? "🎙️ Listening... speak now" : isTranscribing ? "Transcribing your voice..." : "Ask shadow concierge about work, coding skills..."}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                disabled={isVoiceActive}
                 className="w-full flex-grow bg-[#141418] border border-white/5 rounded-xl py-3 px-4 text-xs placeholder:text-white/20 focus:outline-none focus:border-indigo-500/50 text-white transition-colors"
               />
 

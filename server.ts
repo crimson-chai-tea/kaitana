@@ -314,7 +314,48 @@ Examine the database carefully. Return a JSON structure containing:
     }
   });
 
-  // 3. API: SMART PORTFOLIO RECOMMENDER / AUDIT
+  // 4. API: AUDIO TRANSCRIPTION (VOICE-TO-TEXT)
+  app.post('/api/transcribe-audio', async (req, res) => {
+    const { audioBase64, mimeType } = req.body;
+
+    if (!audioBase64) {
+      return res.status(400).json({ error: 'Missing audioBase64 payload' });
+    }
+
+    if (!ai) {
+      return res.status(200).json({
+        text: '',
+        error: 'Offline mode: GEMINI_API_KEY required for cloud speech transcription'
+      });
+    }
+
+    try {
+      const audioMime = mimeType || 'audio/webm';
+      const prompt = `You are a precision speech-to-text audio transcriber.
+Listen to the user's spoken voice in this audio clip and transcribe the spoken words verbatim.
+Return ONLY the transcription text. Do not add explanations, conversational commentary, or quotes. If the audio is silent or unintelligible, return an empty string.`;
+
+      const response = await generateWithModelFallback(ai, {
+        contents: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: audioMime,
+              data: audioBase64
+            }
+          }
+        ]
+      });
+
+      const text = response.text?.trim() || '';
+      return res.json({ success: true, text });
+    } catch (err: any) {
+      console.error('Audio transcription error:', err);
+      return res.status(500).json({ error: err?.message || 'Failed to transcribe audio' });
+    }
+  });
+
+  // 5. API: SMART PORTFOLIO RECOMMENDER / AUDIT
   app.post('/api/audit', async (req, res) => {
     const { profileName, skills, files, projects } = req.body;
 
