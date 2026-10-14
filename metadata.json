@@ -1,0 +1,6 @@
+{
+  "name": "Kaitana",
+  "description": "An AI-powered shadow interview platform that allows users to create a verified digital representation of themselves, strictly grounded in approved documents and portfolio items.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

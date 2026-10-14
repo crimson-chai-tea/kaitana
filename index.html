@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kaitana - Verified AI Shadow Interview & Digital Representation</title>
+    <meta name="description" content="An AI-powered shadow interview platform that allows users to create a verified digital representation of themselves, strictly grounded in approved documents and portfolio items." />
+    <meta property="og:title" content="Kaitana - Verified AI Shadow Interview & Digital Representation" />
+    <meta property="og:description" content="An AI-powered shadow interview platform that allows users to create a verified digital representation of themselves, strictly grounded in approved documents and portfolio items." />
+    <script>
+      // Gracefully handle HMR/WebSocket transport disconnects as per AI Studio environment constraints
+      window.addEventListener('unhandledrejection', function(event) {
+        var reason = event && event.reason ? (event.reason.message || String(event.reason)) : '';
+        var stack = event && event.reason && event.reason.stack ? String(event.reason.stack) : '';
+        if (reason.indexOf('WebSocket') !== -1 || reason.indexOf('@vite/client') !== -1 || stack.indexOf('@vite/client') !== -1) {
+          event.preventDefault();
+        }
+      });
+      window.addEventListener('error', function(event) {
+        var msg = (event && event.message) ? String(event.message) : '';
+        var filename = (event && event.filename) ? String(event.filename) : '';
+        if (msg.indexOf('WebSocket') !== -1 || filename.indexOf('@vite/client') !== -1) {
+          event.preventDefault();
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
