@@ -148,7 +148,7 @@ Feel free to ask me anything about my work experience, specific project architec
     ]);
 
     onAddLog('Recruiter Entry', `Anonymous Recruiter opened public showcase page for ${user.name}`, 'info');
-  }, [user.id]);
+  }, [user.id, user.name]);
 
   // Scroll messages to bottom as they arrive
   useEffect(() => {

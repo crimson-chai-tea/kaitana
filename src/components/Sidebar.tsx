@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Database, 
   FolderLock, 
@@ -51,21 +51,29 @@ export default function Sidebar({
   const [editBio, setEditBio] = useState(user.bio);
   const [editSkills, setEditSkills] = useState(user.skills.join(', '));
 
+  useEffect(() => {
+    setEditName(user.name || '');
+    setEditTitle(user.title || '');
+    setEditBio(user.bio || '');
+    setEditSkills((user.skills || []).join(', '));
+  }, [user.name, user.title, user.bio, user.skills]);
+
   const handleOpenEdit = () => {
-    setEditName(user.name);
-    setEditTitle(user.title);
-    setEditBio(user.bio);
-    setEditSkills(user.skills.join(', '));
+    setEditName(user.name || '');
+    setEditTitle(user.title || '');
+    setEditBio(user.bio || '');
+    setEditSkills((user.skills || []).join(', '));
     setIsEditingProfile(true);
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editName.trim()) return;
+    const trimmedName = editName.trim();
+    if (!trimmedName) return;
     if (onUpdateUser) {
       onUpdateUser({
         ...user,
-        name: editName.trim(),
+        name: trimmedName,
         title: editTitle.trim(),
         bio: editBio.trim(),
         skills: editSkills.split(',').map(s => s.trim()).filter(Boolean)

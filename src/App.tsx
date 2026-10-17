@@ -433,17 +433,56 @@ Past background: Developed key modular components for enterprise software suites
     setIsExportModalOpen(true);
   };
 
+  const syncJournalWithUser = (journal: JournalData, user: UserProfile): JournalData => {
+    const trimmed = (user.name || '').trim();
+    const nameParts = trimmed.split(/\s+/);
+    const firstName = nameParts[0] || '';
+    const surname = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+    const existing = journal?.profile || ({} as any);
+    return {
+      ...journal,
+      profile: {
+        ...existing,
+        firstName,
+        surname,
+        updatedAt: new Date().toISOString()
+      }
+    };
+  };
+
   const handleUpdateUser = (updatedUser: UserProfile) => {
-    if (activeProfileId === 'vance') setVanceState({ ...vanceState, user: updatedUser });
-    else if (activeProfileId === 'chen') setChenState({ ...chenState, user: updatedUser });
-    else setCustomState({ ...customState, user: updatedUser });
+    const updater = (prev: any) => {
+      const updatedJournal = syncJournalWithUser(prev.journal, updatedUser);
+
+      // Persist updated journal to server so server doesn't hold older name
+      try {
+        fetch('/api/journal/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileId: activeProfileId, journal: updatedJournal })
+        }).catch(e => console.warn('Server journal sync error on user update:', e));
+      } catch (e) {
+        console.warn('Server journal sync error on user update:', e);
+      }
+
+      return {
+        ...prev,
+        user: updatedUser,
+        journal: updatedJournal
+      };
+    };
+
+    if (activeProfileId === 'vance') setVanceState(updater);
+    else if (activeProfileId === 'chen') setChenState(updater);
+    else setCustomState(updater);
+
     handleAddLog('Identity Updated', `Profile details for "${updatedUser.name}" were updated.`, 'info');
   };
 
   const handleUpdateProjects = (updatedProjects: PortfolioProject[]) => {
-    if (activeProfileId === 'vance') setVanceState({ ...vanceState, projects: updatedProjects });
-    else if (activeProfileId === 'chen') setChenState({ ...chenState, projects: updatedProjects });
-    else setCustomState({ ...customState, projects: updatedProjects });
+    if (activeProfileId === 'vance') setVanceState((prev: any) => ({ ...prev, projects: updatedProjects }));
+    else if (activeProfileId === 'chen') setChenState((prev: any) => ({ ...prev, projects: updatedProjects }));
+    else setCustomState((prev: any) => ({ ...prev, projects: updatedProjects }));
   };
 
   const handleUpdateJournal = (updatedJournal: JournalData) => {
@@ -473,9 +512,9 @@ Past background: Developed key modular components for enterprise software suites
   };
 
   const handleUpdateImages = (updatedImages: MediaImage[]) => {
-    if (activeProfileId === 'vance') setVanceState({ ...vanceState, images: updatedImages });
-    else if (activeProfileId === 'chen') setChenState({ ...chenState, images: updatedImages });
-    else setCustomState({ ...customState, images: updatedImages });
+    if (activeProfileId === 'vance') setVanceState((prev: any) => ({ ...prev, images: updatedImages }));
+    else if (activeProfileId === 'chen') setChenState((prev: any) => ({ ...prev, images: updatedImages }));
+    else setCustomState((prev: any) => ({ ...prev, images: updatedImages }));
 
     // Ensure server-side persistence for permanent account retention
     try {
@@ -494,9 +533,9 @@ Past background: Developed key modular components for enterprise software suites
   };
 
   const handleUpdateSelections = (updatedSelections: MediaSelection[]) => {
-    if (activeProfileId === 'vance') setVanceState({ ...vanceState, selections: updatedSelections });
-    else if (activeProfileId === 'chen') setChenState({ ...chenState, selections: updatedSelections });
-    else setCustomState({ ...customState, selections: updatedSelections });
+    if (activeProfileId === 'vance') setVanceState((prev: any) => ({ ...prev, selections: updatedSelections }));
+    else if (activeProfileId === 'chen') setChenState((prev: any) => ({ ...prev, selections: updatedSelections }));
+    else setCustomState((prev: any) => ({ ...prev, selections: updatedSelections }));
 
     // Ensure server-side persistence for permanent account retention
     try {
@@ -515,9 +554,9 @@ Past background: Developed key modular components for enterprise software suites
   };
 
   const handleUpdateRecommendations = (updatedRecs: Recommendation[]) => {
-    if (activeProfileId === 'vance') setVanceState({ ...vanceState, recommendations: updatedRecs });
-    else if (activeProfileId === 'chen') setChenState({ ...chenState, recommendations: updatedRecs });
-    else setCustomState({ ...customState, recommendations: updatedRecs });
+    if (activeProfileId === 'vance') setVanceState((prev: any) => ({ ...prev, recommendations: updatedRecs }));
+    else if (activeProfileId === 'chen') setChenState((prev: any) => ({ ...prev, recommendations: updatedRecs }));
+    else setCustomState((prev: any) => ({ ...prev, recommendations: updatedRecs }));
   };
 
   const handleAddLog = (action: string, details: string, status: 'info' | 'success' | 'warning') => {
@@ -529,15 +568,15 @@ Past background: Developed key modular components for enterprise software suites
       timestamp: new Date().toISOString()
     };
 
-    if (activeProfileId === 'vance') setVanceState({ ...vanceState, logs: [newLog, ...vanceState.logs] });
-    else if (activeProfileId === 'chen') setChenState({ ...chenState, logs: [newLog, ...chenState.logs] });
-    else setCustomState({ ...customState, logs: [newLog, ...customState.logs] });
+    if (activeProfileId === 'vance') setVanceState((prev: any) => ({ ...prev, logs: [newLog, ...prev.logs] }));
+    else if (activeProfileId === 'chen') setChenState((prev: any) => ({ ...prev, logs: [newLog, ...prev.logs] }));
+    else setCustomState((prev: any) => ({ ...prev, logs: [newLog, ...prev.logs] }));
   };
 
   const handleClearLogs = () => {
-    if (activeProfileId === 'vance') setVanceState({ ...vanceState, logs: [] });
-    else if (activeProfileId === 'chen') setChenState({ ...chenState, logs: [] });
-    else setCustomState({ ...customState, logs: [] });
+    if (activeProfileId === 'vance') setVanceState((prev: any) => ({ ...prev, logs: [] }));
+    else if (activeProfileId === 'chen') setChenState((prev: any) => ({ ...prev, logs: [] }));
+    else setCustomState((prev: any) => ({ ...prev, logs: [] }));
   };
 
   // Auth successful callback
@@ -584,7 +623,9 @@ Past background: Developed key modular components for enterprise software suites
   // Switch demo candidates
   const handleToggleProfile = (profileId: string) => {
     setActiveProfileId(profileId);
-    handleAddLog('Profile Swapped', `Clone core values reloaded to represent "${profileId === 'vance' ? 'Sarah Vance' : profileId === 'chen' ? 'Marcus Chen' : 'Custom Vault'}"`, 'info');
+    const targetState = profileId === 'vance' ? vanceState : profileId === 'chen' ? chenState : customState;
+    const profileName = targetState?.user?.name || (profileId === 'vance' ? 'Sarah Vance' : profileId === 'chen' ? 'Marcus Chen' : 'Custom Vault');
+    handleAddLog('Profile Swapped', `Clone core values reloaded to represent "${profileName}"`, 'info');
   };
 
   return (
@@ -628,7 +669,7 @@ Past background: Developed key modular components for enterprise software suites
                   title="Switch sandbox credentials to AWS Solutions Architect"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-                  Sarah Vance
+                  {vanceState.user.name || 'Sarah Vance'}
                 </button>
                 <button
                   type="button"
@@ -641,7 +682,7 @@ Past background: Developed key modular components for enterprise software suites
                   title="Switch sandbox credentials to senior interaction UX designer"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  Marcus Chen
+                  {chenState.user.name || 'Marcus Chen'}
                 </button>
                 <button
                   type="button"
