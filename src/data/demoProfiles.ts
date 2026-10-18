@@ -565,5 +565,172 @@ Grid layout: Fluid 12 Columns with variable 24px and 16px row padding based on v
       ],
       linkedIn: { connected: false }
     }
+  },
+  custom: {
+    user: {
+      id: 'custom',
+      name: 'Malachai Uys',
+      title: 'Senior Software Engineer & Tech Lead',
+      bio: 'Ready to configure my own verified digital clone representation. Paste facts in the Knowledge Vault to seed my weights!',
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop',
+      email: 'malachaistellenboschuniversity@gmail.com',
+      location: 'Stellenbosch, South Africa',
+      skills: ['TypeScript', 'Node.js', 'Express', 'React', 'Cloud Infrastructure', 'AI Systems'],
+      certifications: ['Certified Cloud Security Architect', 'Kaitana Verified Developer'],
+    },
+    files: [
+      {
+        id: 'owner-resume',
+        title: 'Malachai_Uys_Curriculum_Vitae.pdf',
+        category: 'CV',
+        type: 'PDF',
+        size: '48 KB',
+        url: '#',
+        isPublic: true,
+        isAIAccessible: true,
+        isDownloadable: true,
+        isRecruiterVisible: true,
+        uploadDate: '2026-04-01',
+        textContent: `RESUME FACT DIRECTIVES:\nApplicant: Malachai Uys.\nCore focus: Full-stack applications, Express microservices, and AI integrations.\nPast background: Developed key modular components for enterprise software suites, lifting transaction load capacities of backend queues by 40%.`
+      }
+    ],
+    projects: [
+      {
+        id: 'owner-proj-1',
+        title: 'Kaitana Verified RAG Platform',
+        description: 'Engineered a highly secure shadow interview portal grounding generative responses strictly in verified user-provided file text database.',
+        tags: ['React', 'Express', 'Gemini AI', 'Tailwind'],
+        verified: true
+      }
+    ],
+    recommendations: [
+      {
+        id: 'owner-audit-1',
+        title: 'Integrate More Verified Credentials',
+        description: 'Your database has only 1 verified fact. Upload certifications or portfolio sheets to lift your Kaitana Align Score above 80.',
+        category: 'Structure',
+        impact: 'High',
+        resolved: false
+      }
+    ],
+    logs: [
+      {
+        id: 'owner-log-1',
+        action: 'Identity Vault Initialized',
+        timestamp: '2026-04-01T10:00:00Z',
+        details: 'Grounded representation engine loaded with template facts for Malachai Uys.',
+        status: 'info'
+      }
+    ],
+    selections: [
+      {
+        id: 'sel-farming',
+        name: 'Farming Projects',
+        description: 'Sustainable agriculture initiatives, blueberry cultivation, and fieldwork automation'
+      },
+      {
+        id: 'sel-artwork',
+        name: 'Artwork',
+        description: 'Visual arts, generative design studies, and creative portfolio pieces'
+      }
+    ],
+    images: [
+      {
+        id: 'img-farm-1',
+        url: 'https://images.unsplash.com/photo-1595231776515-ddffb1f4eb73?auto=format&fit=crop&w=800&q=80',
+        caption: 'Highbush Blueberry Cultivar Ripening in Organic Orchard',
+        created_at: '2026-03-15',
+        selectionIds: ['sel-farming'],
+        tags: ['blueberry', 'harvest', 'fieldwork', 'agriculture']
+      },
+      {
+        id: 'img-farm-2',
+        url: 'https://images.unsplash.com/photo-1524594152303-9fd13543fe6e?auto=format&fit=crop&w=800&q=80',
+        caption: 'Hand-Selected Fresh Blueberry Harvest Prepared for Cold Chain Distribution',
+        created_at: '2026-03-18',
+        selectionIds: ['sel-farming'],
+        tags: ['blueberry', 'harvest', 'logistics']
+      },
+      {
+        id: 'img-farm-3',
+        url: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80',
+        caption: 'Sustainable Precision Fieldwork and Soil Sensor Telemetry Grid',
+        created_at: '2026-03-20',
+        selectionIds: ['sel-farming'],
+        tags: ['fieldwork', 'agriculture', 'sensors', 'irrigation']
+      },
+      {
+        id: 'img-art-1',
+        url: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80',
+        caption: 'Generative Chroma Study: Digital Expressionism and Geometric Forms',
+        created_at: '2026-03-25',
+        selectionIds: ['sel-artwork'],
+        tags: ['artwork', 'generative', 'abstract', 'visual']
+      },
+      {
+        id: 'img-art-2',
+        url: 'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?auto=format&fit=crop&w=800&q=80',
+        caption: 'Botanical Color Harmony & Acrylic Canvas Textures',
+        created_at: '2026-03-28',
+        selectionIds: ['sel-artwork', 'sel-farming'],
+        tags: ['artwork', 'botanical', 'creative']
+      }
+    ],
+    journal: {
+      profile: {
+        firstName: 'Malachai',
+        surname: 'Uys',
+        age: '24',
+        gender: 'Male',
+        dateOfBirth: '2002-06-15',
+        countryOfResidence: 'South Africa',
+        programmes: [
+          {
+            id: 'prog-custom-1',
+            degree: 'BSc Computer Science & Agri-Tech Systems',
+            institution: 'Stellenbosch University',
+            startYear: '2021',
+            endYear: '2025',
+            description: 'Specialized in distributed backend systems, AI agent orchestration, and precision agriculture telemetry.'
+          }
+        ],
+        courses: [
+          {
+            id: 'course-custom-1',
+            name: 'Certified Cloud Security Architect',
+            provider: 'Cloud Security Alliance',
+            year: '2025',
+            description: 'Zero-trust microservice architecture and cryptographic credential verification.'
+          }
+        ],
+        myStory: '<p>Growing up in the Western Cape, I split my time between software engineering and sustainable blueberry farming. Building Kaitana came from wanting a verified, zero-hallucination way for creators and engineers to let their real work speak for itself.</p>',
+        workExperience: [
+          {
+            id: 'work-custom-1',
+            title: 'Senior Software Engineer & Tech Lead',
+            position: 'Lead Engineer',
+            company: 'Kaitana Labs',
+            startDate: 'Jan 2025',
+            endDate: 'Present',
+            description: 'Architected the Kaitana grounded AI clone engine, multi-language TTS pipeline, and visual media vault.'
+          }
+        ],
+        awards: ['Kaitana Verified Developer Pioneer'],
+        sports: ['Trail Running', 'Rugby'],
+        hobbies: ['Precision Blueberry Farming', 'Generative Art', 'Specialty Coffee Roasting']
+      },
+      entries: [
+        {
+          id: 'journal-custom-1',
+          title: 'Building Grounded AI Clones & Sustainable Orchards',
+          contentHtml: '<h1>My Personal Workspace</h1><p>This journal is the primary source of truth for my AI shadow clone. Any facts I record here take strict precedence over older PDFs or resumes in my Knowledge Vault.</p>',
+          includeInAI: true,
+          createdAt: '2026-04-01T10:00:00Z',
+          updatedAt: '2026-04-01T10:00:00Z'
+        }
+      ],
+      linkedIn: { connected: false }
+    }
   }
 };
+

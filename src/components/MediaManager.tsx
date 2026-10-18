@@ -3,6 +3,7 @@ import {
   MediaImage, 
   MediaSelection 
 } from '../types';
+import { uploadMediaToFirebase } from '../services/firebase';
 import { 
   Image as ImageIcon, 
   Plus, 
@@ -231,26 +232,32 @@ export default function MediaManager({
           setNewCaption(nameWithoutExt);
         }
 
-        // 2. Persist to server /api/media/upload for permanent file storage
-        const response = await fetch('/api/media/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileBase64: compressedBase64,
-            fileName: file.name,
-            mimeType: file.type || 'image/jpeg'
-          })
-        });
+        // 2. Upload directly to Firebase Storage first; fall back to /api/media/upload if restricted
+        try {
+          const firebaseUrl = await uploadMediaToFirebase(profileId, file);
+          setUploadedServerUrl(firebaseUrl);
+          setNewImageUrl(firebaseUrl);
+        } catch {
+          const response = await fetch('/api/media/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileBase64: compressedBase64,
+              fileName: file.name,
+              mimeType: file.type || 'image/jpeg'
+            })
+          });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.url) {
-            setUploadedServerUrl(data.url);
-            setNewImageUrl(data.url);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.url) {
+              setUploadedServerUrl(data.url);
+              setNewImageUrl(data.url);
+            }
           }
         }
       } catch (err) {
-        console.warn('Server upload fallback to compressed base64:', err);
+        console.warn('Upload fallback to compressed base64:', err);
       } finally {
         setIsUploadingFile(false);
       }
