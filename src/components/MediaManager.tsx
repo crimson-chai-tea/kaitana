@@ -517,27 +517,27 @@ export default function MediaManager({
       
       {/* Upper Header Section */}
       <div className="border-b border-white/5 bg-[#0F0F12] p-5 md:p-6 shrink-0">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-indigo-400 font-mono text-xs uppercase tracking-wider">
-              <ImageIcon className="w-4 h-4" />
-              Visual Media Showcase & Retrieval Layer
+            <div className="inline-flex items-center gap-2 text-indigo-400 font-mono text-[11px] font-semibold uppercase tracking-wider mb-1.5">
+              <span className="kt-live-dot" />
+              <span>VISUAL MEDIA SHOWCASE &amp; RETRIEVAL LAYER • {images.length} VERIFIED PROOFS</span>
             </div>
-            <h1 className="text-xl md:text-2xl font-bold text-white mt-1">
-              Visual Work & Selection Studio
+            <h1 className="font-serif text-4xl md:text-5xl font-normal text-white leading-[1.06]">
+              Visual Work &amp; <em className="kt-shimmer-text italic">Selection Studio</em>
             </h1>
-            <p className="text-xs text-white/50 mt-1 max-w-2xl">
+            <p className="text-sm text-white/60 mt-2 max-w-2xl leading-relaxed">
               Upload and organize visual portfolio evidence into Selections and search Tags. When recruiters ask for visual proof during shadow interviews, your AI clone dynamically retrieves and showcases these verified items.
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 self-start md:self-auto">
             <button
               onClick={handleOpenCreateSelection}
-              className="px-3.5 py-2 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 text-purple-300 hover:text-white border border-purple-500/30 text-xs font-medium flex items-center gap-2 transition-all cursor-pointer shadow-sm"
+              className="px-4 py-2.5 rounded-full bg-[#141418] hover:bg-white/10 text-white border border-white/10 text-xs font-mono uppercase font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-xs"
               title="Create new selection collection"
             >
-              <FolderPlus className="w-4 h-4 text-purple-400" />
+              <FolderPlus className="w-3.5 h-3.5 text-indigo-400" />
               <span>New Selection</span>
             </button>
 
@@ -550,10 +550,10 @@ export default function MediaManager({
                 }
                 setIsUploadModalOpen(true);
               }}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium text-xs flex items-center gap-2 shadow-lg shadow-indigo-500/20 hover:scale-[1.02] transition-all cursor-pointer"
+              className="px-5 py-2.5 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white font-mono uppercase font-semibold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              <span>Upload Image</span>
+              <Plus className="w-4 h-4 text-white" />
+              <span>Upload Media Proof</span>
             </button>
           </div>
         </div>

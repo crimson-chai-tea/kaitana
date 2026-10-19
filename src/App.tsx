@@ -57,11 +57,31 @@ import {
   ArrowLeft,
   Bot,
   Menu,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 export default function App() {
+  const [theme, setTheme] = useState<'cream' | 'obsidian'>(() => {
+    try {
+      const saved = localStorage.getItem('kaitana_theme');
+      return saved === 'obsidian' ? 'obsidian' : 'cream';
+    } catch {
+      return 'cream';
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem('kaitana_theme', theme);
+    } catch {
+      // ignore storage errors
+    }
+  }, [theme]);
+
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     try {
       return localStorage.getItem('kaitana_is_logged_in') === 'true';
@@ -324,10 +344,10 @@ export default function App() {
       ) : (
         <>
           {/* TOP DYNAMIC SANDBOX COMMAND CONTROL PANEL */}
-          <div className="bg-[#0F0F12] border-b border-white/10 px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono relative z-50 shrink-0 shadow-lg animate-fadeIn">
+          <div className="bg-[#0F0F12] border-b border-white/10 px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono relative z-50 shrink-0 shadow-sm animate-fadeIn">
             
             <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 {!isRecruiterMode && (
                   <button
                     onClick={() => setIsMobileSidebarOpen(true)}
@@ -337,37 +357,37 @@ export default function App() {
                     <Menu className="w-4 h-4 text-indigo-400" />
                   </button>
                 )}
-                <span className="flex items-center gap-1.5 bg-indigo-500/10 text-indigo-300 font-mono text-[10px] px-2 py-0.5 rounded border border-indigo-500/20 shadow-sm leading-none">
-                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" /> SANDBOX PLAYGROUND
+                <span className="flex items-center gap-2 bg-[#141418] text-white font-mono text-[11px] font-semibold tracking-wider px-3 py-1 rounded-full border border-white/10 shadow-xs leading-none uppercase">
+                  <span className="kt-live-dot" /> SHADOW TELEMETRY ONLINE
                 </span>
               </div>
               <span className="text-[#1E1E24] hidden sm:inline">|</span>
               
               {/* Profile Swapping Pills with responsive touch rail */}
               <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-[280px] xs:max-w-xs sm:max-w-none no-scrollbar shrink-0">
-                <span className="text-white/40 text-[10px] uppercase font-bold mr-1 hidden sm:inline shrink-0">Clone:</span>
+                <span className="text-white/40 text-[10px] uppercase font-bold mr-1 hidden sm:inline shrink-0">Persona:</span>
                 <button
                   type="button"
                   onClick={() => handleToggleProfile('vance')}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] transition-all font-mono uppercase cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  className={`px-3 py-1 rounded-full text-[11px] transition-all font-mono uppercase cursor-pointer shrink-0 flex items-center gap-1.5 ${
                     activeProfileId === 'vance'
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 font-semibold shadow-sm'
-                      : 'bg-black/40 border border-white/5 text-white/40 hover:text-white/80'
+                      ? 'bg-[#650714] text-white font-semibold shadow-xs'
+                      : 'bg-black/40 border border-white/10 text-white/60 hover:text-white'
                   }`}
-                  title="Switch sandbox credentials to AWS Solutions Architect"
+                  title="Switch sandbox credentials to Sarah Vance"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
                   {vanceState.user.name || 'Sarah Vance'}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleToggleProfile('chen')}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] transition-all font-mono uppercase cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  className={`px-3 py-1 rounded-full text-[11px] transition-all font-mono uppercase cursor-pointer shrink-0 flex items-center gap-1.5 ${
                     activeProfileId === 'chen'
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold shadow-sm'
-                      : 'bg-black/40 border border-white/5 text-white/40 hover:text-white/80'
+                      ? 'bg-[#650714] text-white font-semibold shadow-xs'
+                      : 'bg-black/40 border border-white/10 text-white/60 hover:text-white'
                   }`}
-                  title="Switch sandbox credentials to senior interaction UX designer"
+                  title="Switch sandbox credentials to Marcus Chen"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                   {chenState.user.name || 'Marcus Chen'}
@@ -375,45 +395,66 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => handleToggleProfile('custom')}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] transition-all font-mono uppercase cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  className={`px-3 py-1 rounded-full text-[11px] transition-all font-mono uppercase cursor-pointer shrink-0 flex items-center gap-1.5 ${
                     activeProfileId === 'custom'
-                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold shadow-sm'
-                      : 'bg-black/40 border border-white/5 text-white/40 hover:text-white/80'
+                      ? 'bg-[#650714] text-white font-semibold shadow-xs'
+                      : 'bg-black/40 border border-white/10 text-white/60 hover:text-white'
                   }`}
-                  title="Switch sandbox credentials to Malachai Uys"
+                  title="Switch sandbox credentials to Custom Sandbox"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
                   {customState.user.name || 'Malachai Uys'}
                 </button>
               </div>
             </div>
 
-            {/* Switch view: Owner Vault Config vs. Recruiter Front Door */}
-            <div className="flex bg-black/40 p-1 rounded-lg border border-white/5 shadow-inner">
+            {/* Right Controls: Theme Switcher + View Mode Switcher */}
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
-                onClick={() => setIsRecruiterMode(false)}
-                className={`px-3 py-1 text-[10px] font-mono rounded transition-all uppercase flex items-center gap-1 leading-none cursor-pointer ${
-                  !isRecruiterMode 
-                    ? 'bg-[#141418] text-indigo-400 shadow' 
-                    : 'text-white/40 hover:text-white/80'
-                }`}
-                title="Management console to configure facts, set access, edit permissions"
+                onClick={() => setTheme(theme === 'cream' ? 'obsidian' : 'cream')}
+                className="px-3 py-1.5 rounded-full bg-black/40 hover:bg-white/10 border border-white/10 text-[11px] font-mono uppercase flex items-center gap-1.5 text-white/75 hover:text-white cursor-pointer transition-all"
+                title={theme === 'cream' ? 'Switch to Obsidian Oxblood Dark Theme' : 'Switch to Editorial Cream Light Theme'}
               >
-                <Sliders className="w-3 h-3" /> Owner Console
+                {theme === 'cream' ? (
+                  <>
+                    <Sun className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="hidden md:inline">Editorial Cream</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="hidden md:inline">Obsidian Dark</span>
+                  </>
+                )}
               </button>
-              <button
-                type="button"
-                onClick={() => setIsRecruiterMode(true)}
-                className={`px-3 py-1 text-[10px] font-mono rounded transition-all uppercase flex items-center gap-1 leading-none cursor-pointer ${
-                  isRecruiterMode 
-                    ? 'bg-[#141418] text-indigo-400 shadow' 
-                    : 'text-white/40 hover:text-white/80'
-                }`}
-                title="Sleek, futuristic public concierge layout with chatbot"
-              >
-                <Eye className="w-3 h-3" /> Recruiter View
-              </button>
+
+              <div className="flex bg-black/40 p-1 rounded-full border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsRecruiterMode(false)}
+                  className={`px-3 py-1 text-[11px] font-mono rounded-full transition-all uppercase flex items-center gap-1.5 leading-none cursor-pointer ${
+                    !isRecruiterMode 
+                      ? 'bg-indigo-500 text-white font-semibold shadow-xs' 
+                      : 'text-white/50 hover:text-white'
+                  }`}
+                  title="Management console to configure facts, set access, edit permissions"
+                >
+                  <Sliders className="w-3 h-3" /> Owner Console
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsRecruiterMode(true)}
+                  className={`px-3 py-1 text-[11px] font-mono rounded-full transition-all uppercase flex items-center gap-1.5 leading-none cursor-pointer ${
+                    isRecruiterMode 
+                      ? 'bg-indigo-500 text-white font-semibold shadow-xs' 
+                      : 'text-white/50 hover:text-white'
+                  }`}
+                  title="Public recruiter concierge layout with grounded shadow interview"
+                >
+                  <Eye className="w-3 h-3" /> Recruiter Concierge
+                </button>
+              </div>
             </div>
 
           </div>

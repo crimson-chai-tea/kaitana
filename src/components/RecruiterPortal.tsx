@@ -793,53 +793,55 @@ Feel free to ask me anything about my work experience, specific project architec
         </div>
 
         {/* RIGHT COLUMN: Cinematic AI Concierge Shadow Chat Agent (Lg: col-span-7) */}
-        <div className="order-1 lg:order-2 lg:col-span-7 flex flex-col h-[520px] sm:h-[620px] lg:h-[760px] bg-[#0F0F12] border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
+        <div className="order-1 lg:order-2 lg:col-span-7 flex flex-col h-[520px] sm:h-[620px] lg:h-[760px] glass-panel rounded-3xl overflow-hidden shadow-xl relative">
           
-          {/* Chat upper status header */}
-          <div className="p-4 border-b border-white/5 bg-[#141418] flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center neon-glow-indigo relative">
-                <Bot className="w-4 h-4 text-indigo-400 pulse-glow-element" />
-                <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-purple-400 ring-2 ring-[#141418]" />
+          {/* Chat upper status header (Stitch Live Persona Channel) */}
+          <div className="p-4 md:p-5 border-b border-white/10 bg-[#141418] flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#2e1316] text-white flex items-center justify-center font-serif text-lg shrink-0 shadow-sm">
+                {user.name.charAt(0)}
               </div>
               <div>
-                <div className="text-xs font-bold text-white flex items-center gap-1.5 uppercase font-mono">
-                  {user.name}'s Conversational AI Shadow
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-[10px] font-mono uppercase font-semibold text-indigo-400">
+                    <span className="kt-live-dot" /> LIVE PERSONA CHANNEL
+                  </span>
+                  <span className="text-[10px] font-mono text-white/45 uppercase hidden sm:inline">SESSION #KC-8942-AU</span>
                 </div>
-                <div className="text-[10px] text-white/40 flex items-center gap-1 leading-none mt-0.5 uppercase font-mono">
-                  <CheckCircle className="w-3 h-3 text-purple-400 font-bold" /> RAG Shield Active • Zero Hallucinations Cap
+                <div className="font-serif text-xl text-white leading-snug mt-0.5">
+                  {user.name} <em className="text-indigo-400 italic text-base">— {user.title}</em>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              {/* Voice Narration Persistent Toggle */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Voice Narration Persistent Toggle (Stitch Cartesia Pill) */}
               <button
                 type="button"
                 onClick={toggleTtsNarration}
-                className={`px-2.5 py-1 rounded-lg border text-[10px] font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-full border text-[11px] font-mono uppercase flex items-center gap-1.5 transition-all cursor-pointer ${
                   ttsPreferences.enabled
-                    ? 'bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-300 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
-                    : 'bg-white/5 hover:bg-white/10 text-white/50 border-white/10'
+                    ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm font-semibold'
+                    : 'bg-white/5 hover:bg-white/10 text-white/60 border-white/10'
                 }`}
                 title={ttsPreferences.enabled ? "Voice narration is ON (Click to turn off)" : "Voice narration is OFF (Click to turn on)"}
               >
                 {ttsPreferences.enabled ? (
                   <>
-                    <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="hidden sm:inline font-semibold">Voice ON</span>
+                    <Volume2 className="w-3.5 h-3.5 text-white" />
+                    <span>VOICE: ACTIVE</span>
                     {currentlySpeakingMsgId && (
                       <span className="flex items-center gap-0.5 ml-0.5">
-                        <span className="w-1 h-2 bg-emerald-400 animate-pulse rounded-full" />
-                        <span className="w-1 h-3.5 bg-emerald-400 animate-pulse delay-75 rounded-full" />
-                        <span className="w-1 h-2 bg-emerald-400 animate-pulse delay-150 rounded-full" />
+                        <span className="w-1 h-2 bg-white animate-pulse rounded-full" />
+                        <span className="w-1 h-3.5 bg-white animate-pulse delay-75 rounded-full" />
+                        <span className="w-1 h-2 bg-white animate-pulse delay-150 rounded-full" />
                       </span>
                     )}
                   </>
                 ) : (
                   <>
-                    <VolumeX className="w-3.5 h-3.5 text-white/40" />
-                    <span className="hidden sm:inline">Voice OFF</span>
+                    <VolumeX className="w-3.5 h-3.5 text-white/50" />
+                    <span>VOICE: MUTED</span>
                   </>
                 )}
               </button>
@@ -848,13 +850,13 @@ Feel free to ask me anything about my work experience, specific project architec
               <button
                 type="button"
                 onClick={() => setIsTtsModalOpen(true)}
-                className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 text-[10px] font-mono flex items-center gap-1 transition-colors cursor-pointer relative"
+                className="px-3 py-1.5 rounded-full bg-black/40 hover:bg-white/10 text-white/75 hover:text-white border border-white/10 text-[11px] font-mono uppercase flex items-center gap-1 transition-colors cursor-pointer relative"
                 title="Voice Narration & Translation Settings"
               >
                 <SettingsIcon className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Voice Settings</span>
+                <span className="hidden md:inline">Audio Engine</span>
                 {ttsPreferences.language !== 'en' && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 ring-2 ring-[#141418]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
                 )}
               </button>
 
@@ -862,11 +864,11 @@ Feel free to ask me anything about my work experience, specific project architec
                 <button
                   type="button"
                   onClick={() => onOpenExportModal(messages)}
-                  className="px-2.5 py-1 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-300 border border-blue-500/25 text-[10px] font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-full bg-black/40 hover:bg-white/10 text-white/75 border border-white/10 text-[11px] font-mono uppercase flex items-center gap-1.5 transition-colors cursor-pointer"
                   title="Export interview transcript & candidate evaluation to a new Google Doc"
                 >
-                  <FilePlus className="w-3 h-3 text-blue-400" />
-                  <span className="hidden sm:inline">Export to Docs</span>
+                  <FilePlus className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="hidden sm:inline">Export Docs</span>
                 </button>
               )}
 
@@ -874,17 +876,13 @@ Feel free to ask me anything about my work experience, specific project architec
                 <button
                   type="button"
                   onClick={onOpenGmailModal}
-                  className="px-2.5 py-1 rounded-lg bg-rose-600/10 hover:bg-rose-600/20 text-rose-300 border border-rose-500/25 text-[10px] font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-full bg-black/40 hover:bg-white/10 text-white/75 border border-white/10 text-[11px] font-mono uppercase flex items-center gap-1.5 transition-colors cursor-pointer"
                   title="Email candidate through authenticated Gmail"
                 >
-                  <Mail className="w-3 h-3 text-rose-400" />
-                  <span className="hidden sm:inline">Gmail</span>
+                  <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="hidden sm:inline">Direct Gmail</span>
                 </button>
               )}
-
-              <div className="text-[10px] bg-[#0A0A0C] border border-indigo-500/20 text-indigo-300 font-mono px-2 py-0.5 rounded uppercase hidden md:block">
-                Model: gemini-3.5-flash
-              </div>
             </div>
           </div>
 
