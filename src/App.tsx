@@ -514,7 +514,7 @@ export default function App() {
                 workspaceUser={workspaceUser}
               />
             ) : (
-              (() => {
+              <div key={activeTab} className="kt-view contents">{(() => {
                 switch(activeTab) {
                   case 'journal':
                     return (
@@ -612,7 +612,7 @@ export default function App() {
                       </div>
                     )
                 }
-              })()
+              })()}</div>
             )}
 
           </div>
