@@ -98,15 +98,15 @@ export default function Sidebar({
       {/* Upper Brand Section */}
       <div className="space-y-6">
         <div className="flex items-center gap-2.5 px-2 py-2">
-          <div className="w-8 h-8 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-505/10">
-            <span className="font-bold text-white text-md">K</span>
+          <div className="w-9 h-9 bg-indigo-500 rounded-full flex items-center justify-center shadow-[0_0_24px_rgba(227,0,15,0.55)] animate-float">
+            <span className="font-serif font-semibold text-white text-lg leading-none">K</span>
           </div>
           <div>
-            <span className="text-md font-semibold tracking-tight text-white block">
-              Kaitana
+            <span className="font-serif text-xl tracking-wide text-white block leading-none">
+              KAITANA
             </span>
-            <span className="text-[10px] text-white/40 block leading-none">
-              Identity Vault
+            <span className="text-[10px] font-mono uppercase text-white/40 block leading-none mt-1">
+              Grounded Shadow Persona
             </span>
           </div>
         </div>
@@ -297,20 +297,22 @@ export default function Sidebar({
             return (
               <button
                 key={item.id}
+                style={{ animationDelay: `${menuItems.indexOf(item) * 60 + 150}ms` }}
                 onClick={() => {
                   setActiveTab(item.id);
                 }}
-                className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
+                className={`animate-rise w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-full transition-all group ${
                   isActive 
-                    ? 'bg-white/5 text-white border border-white/10 shadow-sm font-medium' 
-                    : 'text-white/50 hover:text-white hover:bg-white/5 border border-transparent'
+                    ? 'bg-indigo-500 text-white shadow-[0_8px_24px_-8px_rgba(227,0,15,0.7)] font-medium translate-x-1' 
+                    : 'text-white/55 hover:text-white hover:bg-white/5 hover:translate-x-1 border border-transparent'
                 }`}
               >
-                <Icon className={`w-4 h-4 transition-transform group-hover:scale-105 ${isActive ? 'text-indigo-400' : 'text-white/30 group-hover:text-white/55'}`} />
+                <Icon className={`w-4 h-4 transition-transform group-hover:scale-110 group-hover:-rotate-6 ${isActive ? 'text-white' : 'text-white/30 group-hover:text-indigo-400'}`} />
                 <div className="overflow-hidden">
                   <span className="text-xs font-medium block leading-tight">{item.label}</span>
-                  <span className="text-[8px] text-white/40 mt-0.5 block truncate leading-none">{item.desc}</span>
+                  <span className={`text-[9px] mt-0.5 block truncate leading-none ${isActive ? 'text-white/70' : 'text-white/35'}`}>{item.desc}</span>
                 </div>
+                {isActive && <span className="kt-live-dot ml-auto !bg-white" />}
               </button>
             );
           })}

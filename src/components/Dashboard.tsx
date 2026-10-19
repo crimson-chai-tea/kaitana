@@ -390,10 +390,15 @@ export default function Dashboard({
       {/* Upper header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            <FolderLock className="w-5 h-5 text-indigo-400" /> Grounded Knowledge Database
+          <span className="inline-flex items-center gap-2 text-[10px] font-mono uppercase text-white/50 mb-2">
+            <span className="kt-live-dot" /> Shadow telemetry online
+            <span className="px-2 py-0.5 rounded-full border border-indigo-500/30 text-indigo-300">Zero hallucination mode</span>
+          </span>
+          <h2 className="font-serif text-4xl md:text-5xl font-normal tracking-tight text-white flex items-center gap-3 leading-[1.05]">
+            <FolderLock className="w-7 h-7 text-indigo-400 shrink-0" />
+            <span>Grounded <em className="kt-shimmer-text italic">Knowledge</em> Database</span>
           </h2>
-          <p className="text-xs text-white/50 mt-1">
+          <p className="text-sm text-white/55 mt-3 max-w-xl leading-relaxed">
             Configure the specific resume facts, certifications, or portfolio specifications your Shadow AI is trained on.
           </p>
         </div>
