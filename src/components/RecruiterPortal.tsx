@@ -627,23 +627,26 @@ Feel free to ask me anything about my work experience, specific project architec
         <div className="order-2 lg:order-1 lg:col-span-5 space-y-6">
           
           {/* 1. Candidate Hero Badge Card */}
-          <div className="bg-[#0F0F12] border border-white/10 p-6 rounded-2xl shadow-xl relative overflow-hidden">
-            <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-purple-500/10 text-purple-400 text-[10px] font-mono px-2 py-0.5 rounded-full border border-purple-500/20 shadow-sm leading-none">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+          <div className="glass-panel bg-[#150d0f] border border-white/10 p-6 rounded-3xl shadow-xl relative overflow-hidden">
+            <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-white text-[#2e1316] text-[10px] font-mono px-2.5 py-1 rounded-full border border-indigo-500 shadow-sm leading-none">
+              <span className="kt-live-dot" />
               VERIFIED IDENTITY
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <img 
-                src={user.avatarUrl} 
-                alt={user.name} 
-                className="w-16 h-16 rounded-2xl object-cover ring-2 ring-indigo-500/25"
-                referrerPolicy="no-referrer"
-              />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4">
+              <div className="relative shrink-0">
+                <span className="absolute -inset-1.5 rounded-3xl bg-indigo-500/30 blur-md pulse-glow-element" />
+                <img 
+                  src={user.avatarUrl} 
+                  alt={user.name} 
+                  className="relative w-20 h-20 rounded-2xl object-cover ring-2 ring-indigo-500/60"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
               <div>
-                <h2 className="text-xl font-bold text-white tracking-tight">{user.name}</h2>
-                <p className="text-xs text-indigo-400 font-mono mt-0.5">{user.title}</p>
-                <p className="text-[10px] text-white/40 flex items-center gap-1 mt-1.5">
+                <h2 className="font-serif text-4xl text-white leading-none">{user.name}</h2>
+                <p className="text-sm text-indigo-400 font-mono uppercase mt-1.5">{user.title}</p>
+                <p className="text-[11px] text-white/45 flex items-center gap-1 mt-2">
                   <MapPin className="w-3.5 h-3.5 text-white/30" /> {user.location}
                 </p>
               </div>
@@ -898,16 +901,17 @@ Feel free to ask me anything about my work experience, specific project architec
               {messages.map((msg) => (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 14, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 26 }}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed border ${
+                  <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed border transition-shadow hover:shadow-[0_10px_30px_-12px_rgba(227,0,15,0.35)] ${
                     msg.role === 'user' 
-                      ? 'bg-gradient-to-br from-indigo-950/40 to-[#141418] border-indigo-500/20 text-white' 
+                      ? 'bg-gradient-to-br from-indigo-900/50 to-[#150d0f] border-indigo-500/30 text-white rounded-br-sm' 
                       : msg.isUnavailable
                         ? 'bg-rose-950/15 border-rose-500/20 text-slate-300'
-                        : 'bg-[#141418] border-white/5 text-[#E0E0E6]'
+                        : 'bg-[#150d0f] border-white/5 border-l-2 border-l-indigo-800 text-[#E0E0E6] rounded-bl-sm'
                   }`}>
                     
                     {/* Role Tag indicators */}

@@ -210,3 +210,7 @@ input:focus, textarea:focus, select:focus {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 }
+
+/* Editorial page titles across Projects / Media / Logs / Audit */
+h2.text-xl { font-size: 2.25rem; line-height: 1.1; font-weight: 400; }
+h2.text-xl svg { display: none; }
