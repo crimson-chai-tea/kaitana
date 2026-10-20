@@ -126,14 +126,24 @@ html:not([data-theme="obsidian"]) .border-white\/10,
 html:not([data-theme="obsidian"]) .border-white\/5,
 html:not([data-theme="obsidian"]) .border-white\/15,
 html:not([data-theme="obsidian"]) .border-white\/20,
-html:not([data-theme="obsidian"]) .border-\[\#1E1E24\],
 html:not([data-theme="obsidian"]) .divide-white\/5 > :not([hidden]) ~ :not([hidden]),
 html:not([data-theme="obsidian"]) .divide-white\/10 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #e2dcd5 !important;
+  border-color: #dcd5ce !important;
 }
 
-/* Primary Ink & Muted Stone Typography in Editorial Cream */
+/* Structural dividers & quote accent lines in Editorial Cream */
+html:not([data-theme="obsidian"]) .border-\[\#1E1E24\],
+html:not([data-theme="obsidian"]) [class*="border-[#1E1E24]"] {
+  border-color: #852128 !important;
+}
+
+/* Primary Ink Typography in Editorial Cream (Deep Carbon Black for maximum legibility) */
 html:not([data-theme="obsidian"]) .text-\[\#E0E0E6\],
+html:not([data-theme="obsidian"]) [class*="text-[#E0E0E6]"],
+html:not([data-theme="obsidian"]) .text-\[\#E0E0E6\]\/85,
+html:not([data-theme="obsidian"]) .text-\[\#E0E0E6\]\/80,
+html:not([data-theme="obsidian"]) .text-\[\#E0E0E6\]\/75,
+html:not([data-theme="obsidian"]) .text-\[\#E0E0E6\]\/70,
 html:not([data-theme="obsidian"]) .text-slate-100,
 html:not([data-theme="obsidian"]) .text-slate-200,
 html:not([data-theme="obsidian"]) .text-slate-300,
@@ -143,44 +153,59 @@ html:not([data-theme="obsidian"]) .text-white,
 html:not([data-theme="obsidian"]) .text-white\/90,
 html:not([data-theme="obsidian"]) .text-white\/85,
 html:not([data-theme="obsidian"]) .text-white\/80 {
-  color: #1d1b19 !important;
+  color: #141210 !important;
 }
 
+/* Secondary / Subdued Typography in Editorial Cream (Rich Espresso Umber - Dark & Crisp) */
 html:not([data-theme="obsidian"]) .text-white\/75,
 html:not([data-theme="obsidian"]) .text-white\/70,
+html:not([data-theme="obsidian"]) .text-white\/65,
 html:not([data-theme="obsidian"]) .text-white\/60,
 html:not([data-theme="obsidian"]) .text-white\/55,
 html:not([data-theme="obsidian"]) .text-white\/50,
+html:not([data-theme="obsidian"]) .text-\[\#E0E0E6\]\/60,
+html:not([data-theme="obsidian"]) .text-\[\#E0E0E6\]\/50,
 html:not([data-theme="obsidian"]) .text-slate-400,
 html:not([data-theme="obsidian"]) .text-gray-400 {
-  color: #5e3f3a !important;
+  color: #2c2420 !important;
 }
 
+/* Tertiary / Metadata / Labels / Timestamps in Editorial Cream (Deep Charcoal-Stone - High Contrast) */
 html:not([data-theme="obsidian"]) .text-white\/45,
 html:not([data-theme="obsidian"]) .text-white\/40,
 html:not([data-theme="obsidian"]) .text-white\/35,
 html:not([data-theme="obsidian"]) .text-white\/30,
 html:not([data-theme="obsidian"]) .text-white\/25,
 html:not([data-theme="obsidian"]) .text-white\/20,
+html:not([data-theme="obsidian"]) .text-\[\#E0E0E6\]\/40,
+html:not([data-theme="obsidian"]) .text-\[\#E0E0E6\]\/30,
+html:not([data-theme="obsidian"]) .text-\[\#E0E0E6\]\/25,
 html:not([data-theme="obsidian"]) .text-slate-500,
+html:not([data-theme="obsidian"]) .text-slate-600,
 html:not([data-theme="obsidian"]) .text-\[\#1E1E24\] {
-  color: #837a6e !important;
+  color: #4a3f3a !important;
+}
+
+/* Input Placeholders in Editorial Cream */
+html:not([data-theme="obsidian"]) ::placeholder {
+  color: #5c4e48 !important;
+  opacity: 0.85 !important;
 }
 
 /* High-contrast semantic accent text on Cream surfaces */
 html:not([data-theme="obsidian"]) .text-indigo-400,
 html:not([data-theme="obsidian"]) .text-indigo-300,
 html:not([data-theme="obsidian"]) .text-indigo-200 {
-  color: #b40009 !important;
+  color: #9a0007 !important;
 }
 html:not([data-theme="obsidian"]) .text-purple-400,
 html:not([data-theme="obsidian"]) .text-purple-300,
 html:not([data-theme="obsidian"]) .text-purple-200 {
-  color: #650714 !important;
+  color: #56050f !important;
 }
 html:not([data-theme="obsidian"]) .text-emerald-400,
 html:not([data-theme="obsidian"]) .text-emerald-300 {
-  color: #0d6847 !important;
+  color: #095432 !important;
 }
 html:not([data-theme="obsidian"]) .text-blue-400,
 html:not([data-theme="obsidian"]) .text-blue-300 {
@@ -189,12 +214,12 @@ html:not([data-theme="obsidian"]) .text-blue-300 {
 html:not([data-theme="obsidian"]) .text-amber-400,
 html:not([data-theme="obsidian"]) .text-amber-300,
 html:not([data-theme="obsidian"]) .text-yellow-400 {
-  color: #92400e !important;
+  color: #78350f !important;
 }
 html:not([data-theme="obsidian"]) .text-rose-400,
 html:not([data-theme="obsidian"]) .text-rose-300,
 html:not([data-theme="obsidian"]) .text-red-400 {
-  color: #93000a !important;
+  color: #82070e !important;
 }
 
 /* Soft Archival Tinted Containers on Cream */

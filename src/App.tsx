@@ -466,7 +466,7 @@ export default function App() {
             {!isRecruiterMode && (
               <>
                 {/* Desktop static Sidebar layout */}
-                <div className="hidden lg:flex lg:w-64 lg:shrink-0 h-full border-r border-white/10">
+                <div className="hidden lg:flex lg:w-64 lg:shrink-0 h-full border-r border-white/10 min-h-0 overflow-hidden">
                   <Sidebar 
                     user={currentData.user}
                     activeTab={activeTab}
@@ -501,7 +501,7 @@ export default function App() {
                         animate={{ x: 0 }}
                         exit={{ x: '-100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-                        className="relative w-72 h-full bg-[#0F0F12] flex flex-col z-10"
+                        className="relative w-72 h-full bg-[#0F0F12] flex flex-col z-10 min-h-0 overflow-hidden"
                       >
                         <Sidebar 
                           user={currentData.user}

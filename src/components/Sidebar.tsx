@@ -93,10 +93,10 @@ export default function Sidebar({
   ];
 
   return (
-    <aside className="w-full h-full bg-[#0F0F12] flex flex-col justify-between p-4 relative z-20">
+    <aside className="w-full h-full bg-[#0F0F12] flex flex-col justify-between p-4 relative z-20 overflow-y-auto overflow-x-hidden min-h-0 overscroll-contain">
       
       {/* Upper Brand Section */}
-      <div className="space-y-6">
+      <div className="space-y-6 shrink-0">
         <div className="flex items-center gap-2.5 px-2 py-2">
           <div className="w-9 h-9 bg-indigo-500 rounded-full flex items-center justify-center shadow-[0_0_24px_rgba(227,0,15,0.55)] animate-float">
             <span className="font-serif font-semibold text-white text-lg leading-none">K</span>
@@ -320,7 +320,7 @@ export default function Sidebar({
       </div>
 
       {/* Downside Settings & Controls */}
-      <div className="space-y-3 pt-4 border-t border-white/5">
+      <div className="space-y-3 pt-4 border-t border-white/5 shrink-0 mt-6">
         
         {/* Toggle Real Preview Switcher */}
         <button

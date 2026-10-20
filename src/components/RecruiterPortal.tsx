@@ -652,7 +652,7 @@ Feel free to ask me anything about my work experience, specific project architec
               </div>
             </div>
 
-            <p className="text-xs text-[#E0E0E6]/85 italic mt-4 border-l-2 border-[#1E1E24] pl-3.5 leading-relaxed">
+            <p className="text-xs md:text-sm italic mt-4 border-l-2 border-[#1E1E24] pl-3.5 leading-relaxed font-serif text-[#141210] dark:text-[#E0E0E6]/90">
               "{user.bio}"
             </p>
 
