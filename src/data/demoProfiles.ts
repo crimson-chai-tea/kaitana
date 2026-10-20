@@ -566,6 +566,429 @@ Grid layout: Fluid 12 Columns with variable 24px and 16px row padding based on v
       linkedIn: { connected: false }
     }
   },
+  tendai: {
+    user: {
+      id: 'tendai',
+      name: 'Tendai Moyo',
+      title: 'Agricultural Economist & Agri-Supply Chain Lead',
+      bio: 'BSc Agricultural Economics graduate from the University of Zimbabwe. Specializing in commercial blueberry & export horticulture value chains, smallholder outgrower scheme aggregation, cold-chain distribution logistics, and precision agribusiness telemetry across Southern Africa.',
+      avatarUrl: 'https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?q=80&w=300&auto=format&fit=crop',
+      email: 'tendai.moyo@zim-agri.co.zw',
+      location: 'Harare & Marondera, Zimbabwe',
+      skills: [
+        'Agricultural Economics',
+        'Cold Chain Logistics',
+        'Crop Yield Forecasting',
+        'Horticultural Export (GlobalG.A.P.)',
+        'Outgrower Scheme Aggregation',
+        'Agribusiness Trade Finance',
+        'Precision Farm Telemetry & Sensors'
+      ],
+      certifications: [
+        'GlobalG.A.P. Certified Farm Assessor (IFA v6)',
+        'Cold Chain Post-Harvest Management (WFLO / SSA)',
+        'Agribusiness Value Chain Analyst (AFDB)'
+      ],
+      linkedin: 'https://linkedin.com/in/tendai-moyo-agriecon',
+      github: 'https://github.com/tendaimoyo-agritech',
+      website: 'https://tendaimoyo.co.zw'
+    },
+    files: [
+      {
+        id: 'tendai-resume',
+        title: 'Tendai_Moyo_Agricultural_Economics_CV.pdf',
+        category: 'CV',
+        type: 'PDF',
+        size: '62 KB',
+        url: '#',
+        isPublic: true,
+        isAIAccessible: true,
+        isDownloadable: true,
+        isRecruiterVisible: true,
+        uploadDate: '2026-04-10',
+        textContent: `CURRICULUM VITAE - TENDAI MOYO
+Location: Harare / Marondera, Zimbabwe | tendai.moyo@zim-agri.co.zw
+
+PROFESSIONAL SUMMARY:
+Results-driven Agricultural Economist and Cold Chain Logistics Specialist with extensive experience in commercial berry production, outgrower aggregation, and post-harvest distribution across Mashonaland East and the Zambezi Basin. Proven track record connecting over 420 smallholder farmers to high-value export corridors to Europe and the Middle East.
+
+EDUCATION:
+- BSc (Hons) Agricultural Economics & Agribusiness Management — University of Zimbabwe (UZ), Graduated First Class.
+- Thesis: Econometric Modeling of Smallholder Outgrower Incomes Under Temperature-Controlled Cold-Chain Hubs.
+
+CORE COMPETENCIES:
+- Agricultural Value Chains, Horticultural Export Compliance (GlobalG.A.P., BRCGS), Cold Chain Integrity, Route Optimization, Precision Soil Moisture Telemetry, Agribusiness Financial Modeling.`
+      },
+      {
+        id: 'tendai-study',
+        title: 'Marondera_Horticulture_Cold_Chain_Feasibility_2025.pdf',
+        category: 'Portfolio',
+        type: 'PDF',
+        size: '118 KB',
+        url: '#',
+        isPublic: true,
+        isAIAccessible: true,
+        isDownloadable: true,
+        isRecruiterVisible: true,
+        uploadDate: '2026-04-12',
+        textContent: `FEASIBILITY STUDY: HIGHBUSH BLUEBERRY EXPORT VALUE CHAIN
+Author: Tendai Moyo, Lead Agricultural Economist
+
+KEY FINDINGS:
+1. Cold Chain Preservation: Implementing refrigerated pre-cooling within 90 minutes of picking extended shelf life by 9 days and reduced spoilage by 28%.
+2. Airport Transit Matrix: Dedicated refrigerated reefers operating night runs from Marondera packhouses to Robert Gabriel Mugabe International Airport achieved 99.4% cargo on-time delivery for London Heathrow and Frankfurt freight flights.`
+      }
+    ],
+    projects: [
+      {
+        id: 'proj-tendai-1',
+        title: 'Highbush Blueberry Export & Cold Chain Hub',
+        description: 'Engineered a centralized packing and refrigerated cold-chain distribution matrix in Marondera, moving over 180 tonnes of export-grade blueberries to international markets with under 1.2% transit spoilage.',
+        tags: ['Agri Economics', 'Cold Chain', 'Logistics', 'GlobalG.A.P.'],
+        verified: true,
+        link: 'https://tendaimoyo.co.zw/projects/blueberry-cold-chain'
+      },
+      {
+        id: 'proj-tendai-2',
+        title: 'Smallholder Outgrower Telemetry & Aggregation Scheme',
+        description: 'Aggregated 420+ smallholder horticultural farmers into unified commercial export clusters, deploying IoT soil moisture sensors and weather telemetry that lifted average yield realizations by 34%.',
+        tags: ['Outgrower Scheme', 'IoT Sensors', 'Telemetry', 'Yield Modeling'],
+        verified: true
+      },
+      {
+        id: 'proj-tendai-3',
+        title: 'Zambezi Basin Perishables Logistics Network',
+        description: 'Formulated multimodal refrigerated transport routes connecting peri-urban farm clusters across Zimbabwe and Mozambique corridors, reducing transit friction by 40%.',
+        tags: ['Logistics', 'Route Optimization', 'Supply Chain', 'Cross-Border'],
+        verified: true
+      }
+    ],
+    recommendations: [
+      {
+        id: 'rec-tendai-1',
+        title: 'Link GlobalG.A.P. Compliance Audit Certificates',
+        description: 'Upload packhouse audit reports to further elevate verification scores for international agricultural buyers.',
+        category: 'Structure',
+        impact: 'High',
+        resolved: false
+      }
+    ],
+    logs: [
+      {
+        id: 'log-tendai-1',
+        action: 'Agri-Economics Persona Calibrated',
+        timestamp: '2026-04-10T09:00:00Z',
+        details: 'Grounded representation loaded with Zimbabwean commercial agriculture and cold chain logistics evidence.',
+        status: 'info'
+      }
+    ],
+    selections: [
+      {
+        id: 'sel-tendai-farming',
+        name: 'Export Farming & Orchards',
+        description: 'Commercial blueberry cultivation, precision irrigation, and orchard management in Zimbabwe'
+      },
+      {
+        id: 'sel-tendai-logistics',
+        name: 'Cold Chain & Logistics',
+        description: 'Refrigerated packhouses, quality grading, and airport transit corridors'
+      }
+    ],
+    images: [
+      {
+        id: 'img-tendai-1',
+        url: 'https://images.unsplash.com/photo-1595231776515-ddffb1f4eb73?auto=format&fit=crop&w=800&q=80',
+        caption: 'Highbush Blueberry Cultivars Ripening Under Netting in Marondera Orchard',
+        created_at: '2026-04-05',
+        selectionIds: ['sel-tendai-farming'],
+        tags: ['blueberry', 'harvest', 'orchard', 'agriculture']
+      },
+      {
+        id: 'img-tendai-2',
+        url: 'https://images.unsplash.com/photo-1524594152303-9fd13543fe6e?auto=format&fit=crop&w=800&q=80',
+        caption: 'Graded Premium Blueberries in Cold-Storage Awaiting Airport Reefer Transfer',
+        created_at: '2026-04-08',
+        selectionIds: ['sel-tendai-logistics', 'sel-tendai-farming'],
+        tags: ['blueberry', 'cold-chain', 'logistics', 'export']
+      },
+      {
+        id: 'img-tendai-3',
+        url: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80',
+        caption: 'Automated Drip Irrigation & Soil Sensor Array Across Commercial Acreage',
+        created_at: '2026-04-12',
+        selectionIds: ['sel-tendai-farming'],
+        tags: ['sensors', 'irrigation', 'telemetry', 'fieldwork']
+      }
+    ],
+    journal: {
+      profile: {
+        firstName: 'Tendai',
+        surname: 'Moyo',
+        age: '26',
+        gender: 'Male',
+        dateOfBirth: '2000-08-14',
+        countryOfResidence: 'Zimbabwe',
+        programmes: [
+          {
+            id: 'prog-tendai-1',
+            degree: 'BSc (Hons) Agricultural Economics & Agribusiness',
+            institution: 'University of Zimbabwe',
+            startYear: '2019',
+            endYear: '2023',
+            description: 'Focused on microeconomic price theory, agricultural trade policy, econometric modeling, and post-harvest horticultural logistics.'
+          }
+        ],
+        courses: [
+          {
+            id: 'course-tendai-1',
+            name: 'Advanced Cold Chain & Post-Harvest Horticulture',
+            provider: 'World Food Logistics Organization (WFLO)',
+            year: '2024',
+            description: 'Temperature integrity, modified atmosphere packaging, and perishable air cargo protocol.'
+          }
+        ],
+        myStory: '<p>Growing up surrounded by the rich soils of Mashonaland East, I realized early on that Africa\'s agricultural future is not just about growing crops—it is about the logistics, economics, and cold chain pipelines that get perishable harvests onto world markets at peak freshness. Graduating in Agricultural Economics from the University of Zimbabwe, I dedicated my career to closing the divide between field agronomy and international commercial supply chains.</p>',
+        workExperience: [
+          {
+            id: 'work-tendai-1',
+            title: 'Agri-Supply Chain & Logistics Specialist',
+            position: 'Supply Chain Lead',
+            company: 'Marondera Horticultural Consortium',
+            startDate: 'Jan 2024',
+            endDate: 'Present',
+            description: 'Lead commercial blueberry packing, cold-chain integrity monitoring, and direct reefer transit logistics to R.G. Mugabe International Airport.'
+          }
+        ],
+        awards: ['University of Zimbabwe Agricultural Economics Top Student Medal (2023)'],
+        sports: ['Distance Running', 'Football'],
+        hobbies: ['Soil Sensor Electronics', 'Coffee Roasting', 'Rural Economic Mentorship']
+      },
+      entries: [
+        {
+          id: 'journal-tendai-1',
+          title: 'The Realities of Cold Chain Distribution in Southern Africa',
+          contentHtml: '<h1>Bridging Field Yield to Airport Cargo</h1><p>In perishable horticultural export, temperature divergence of even 2 degrees Celsius cuts product shelf life drastically. By deploying low-cost IoT temperature probes in every reefer truck from Marondera to Harare, we transformed transit reliability into a bankable asset.</p>',
+          includeInAI: true,
+          createdAt: '2026-04-10T10:00:00Z',
+          updatedAt: '2026-04-10T10:00:00Z'
+        }
+      ],
+      linkedIn: { connected: false }
+    }
+  },
+  ruvimbo: {
+    user: {
+      id: 'ruvimbo',
+      name: 'Ruvimbo Chidzero',
+      title: 'Civil & Structural Technologist | Universal Accessibility Specialist',
+      bio: 'Harare Polytechnic Civil Engineering graduate and wheelchair athlete. Specializing in universal barrier-free infrastructure, structural concrete detailing, and municipal stormwater reticulation. Dedicated to engineering inclusive civic spaces across Southern Africa.',
+      avatarUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=300&auto=format&fit=crop',
+      email: 'ruvimbo.chidzero@polytechnic.ac.zw',
+      location: 'Harare, Zimbabwe',
+      skills: [
+        'Civil & Structural Drafting',
+        'AutoCAD & Civil 3D',
+        'Universal Design (ISO 21542 / SABS 0400-S)',
+        'Municipal Stormwater Reticulation',
+        'Reinforced Concrete Detailing',
+        'Topographic Gradient Surveying',
+        'Bill of Quantities (BOQ) & Estimating'
+      ],
+      certifications: [
+        'Higher National Diploma (HND) in Civil Engineering — Harare Polytechnic',
+        'Certified Civil 3D Infrastructure Modeler (Autodesk)',
+        'Universal Design & Built Environment Accessibility Auditor (ZIE)'
+      ],
+      linkedin: 'https://linkedin.com/in/ruvimbo-chidzero-civil',
+      github: 'https://github.com/ruvimbo-civil-design',
+      website: 'https://ruvimbo-civil.co.zw'
+    },
+    files: [
+      {
+        id: 'ruvimbo-resume',
+        title: 'Ruvimbo_Chidzero_Civil_Engineering_CV.pdf',
+        category: 'CV',
+        type: 'PDF',
+        size: '58 KB',
+        url: '#',
+        isPublic: true,
+        isAIAccessible: true,
+        isDownloadable: true,
+        isRecruiterVisible: true,
+        uploadDate: '2026-04-11',
+        textContent: `CURRICULUM VITAE - RUVIMBO CHIDZERO
+Location: Harare, Zimbabwe | ruvimbo.chidzero@polytechnic.ac.zw
+
+PROFESSIONAL SUMMARY:
+Accomplished Civil & Structural Engineering Technologist graduated from Harare Polytechnic. Wheelchair user and passionate pioneer of Universal Accessibility and barrier-free civic design. Over 4 years of practical experience in structural concrete detailing, stormwater reticulation, and accessibility compliance retrofits across Harare metropolitan area.
+
+EDUCATION:
+- Higher National Diploma (HND) in Civil Engineering — Harare Polytechnic, Graduated with Distinction.
+- National Diploma (ND) in Civil Engineering — Harare Polytechnic.
+- Major Coursework: Theory of Structures, Hydraulics & Hydrology, Soil Mechanics & Foundation Design, Highway Engineering, Reinforced Concrete Design, Surveying.
+
+TECHNICAL CAPABILITIES:
+- AutoCAD, Autodesk Civil 3D, Prokon Structural Analysis, Universal Access Standards (ISO 21542, SABS 0400-S), Municipal Stormwater Drainage, Culvert & Bridge Abutment Design, Road Cross-Section Gradient Modeling.`
+      },
+      {
+        id: 'ruvimbo-spec',
+        title: 'Harare_Polytechnic_Universal_Accessibility_Audit_2025.pdf',
+        category: 'Portfolio',
+        type: 'PDF',
+        size: '145 KB',
+        url: '#',
+        isPublic: true,
+        isAIAccessible: true,
+        isDownloadable: true,
+        isRecruiterVisible: true,
+        uploadDate: '2026-04-12',
+        textContent: `PROJECT SPECIFICATION: UNIVERSAL ACCESSIBILITY AUDIT & RETROFIT
+Location: Harare Polytechnic Campus (Herbert Chitepo Ave, Harare)
+Lead Engineer: Ruvimbo Chidzero
+
+KEY TECHNICAL DELIVERABLES:
+1. Workshop Access Ramp Redesign: Re-engineered 8 main campus entrances from non-compliant 1:6 steps to standard 1:12 accessible ramps with continuous double handrails, intermediate landings, and tactile ground surface indicators.
+2. Sanitary Facilities Retrofit: Designed wheelchair turning radius clearances (1500mm diameter), lever-operated fixtures, and grab rails compliant with ISO 21542 standards.
+3. Stormwater Grating Safety: Replaced wide slotted drainage grates across pedestrian paths with heel-proof, wheelchair-safe perpendicular mesh grates.`
+      }
+    ],
+    projects: [
+      {
+        id: 'proj-ruvimbo-1',
+        title: 'Harare Polytechnic Universal Access Retrofit',
+        description: 'Engineered comprehensive barrier-free campus modifications across 6 faculty blocks, designing compliant 1:12 ramp gradients, tactile guide paths, and accessible laboratory workbenches.',
+        tags: ['Universal Design', 'Harare Poly', 'AutoCAD', 'Structural Ramps'],
+        verified: true,
+        link: 'https://ruvimbo-civil.co.zw/projects/harare-poly-retrofit'
+      },
+      {
+        id: 'proj-ruvimbo-2',
+        title: 'Highfield Municipal Stormwater & Drainage Channel',
+        description: 'Designed reinforced precast concrete box culverts and trapezoidal open channels over 2.4km, eliminating perennial seasonal flash flooding for 1,200+ residential properties in Highfield.',
+        tags: ['Hydraulics', 'Stormwater', 'Concrete Culverts', 'Municipal Civil'],
+        verified: true
+      },
+      {
+        id: 'proj-ruvimbo-3',
+        title: 'Accessible Peri-Urban Water Kiosks & Borehole Network',
+        description: 'Engineered wheelchair-accessible concrete aprons, gravity-fed reticulation pipelines, and low-level lever taps for solar-powered community borehole stations in Epworth.',
+        tags: ['Water Reticulation', 'Inclusion', 'Public Works', 'Community Civil'],
+        verified: true
+      }
+    ],
+    recommendations: [
+      {
+        id: 'rec-ruvimbo-1',
+        title: 'Attach AutoCAD / Civil 3D Structural DWG Exports',
+        description: 'Upload CAD detail drawing sheets of culverts and ramp cross-sections to provide cryptographic proof of structural drafting proficiency.',
+        category: 'Visuals',
+        impact: 'High',
+        resolved: false
+      }
+    ],
+    logs: [
+      {
+        id: 'log-ruvimbo-1',
+        action: 'Civil Technologist Persona Calibrated',
+        timestamp: '2026-04-11T10:00:00Z',
+        details: 'Grounded representation loaded with Harare Polytechnic civil engineering and universal accessibility credentials.',
+        status: 'info'
+      }
+    ],
+    selections: [
+      {
+        id: 'sel-ruvimbo-civil',
+        name: 'Civil & Stormwater Infrastructure',
+        description: 'Precast concrete culverts, hydraulic drainage channels, and municipal infrastructure plans'
+      },
+      {
+        id: 'sel-ruvimbo-access',
+        name: 'Universal Design & Accessibility',
+        description: 'Ramp gradients, tactile paving, wheelchair-accessible sanitary and educational spaces'
+      }
+    ],
+    images: [
+      {
+        id: 'img-ruvimbo-1',
+        url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186156a?auto=format&fit=crop&w=800&q=80',
+        caption: 'Civil Construction Site Survey & Gradient Inspection on Harare Municipal Drainage Channel',
+        created_at: '2026-04-06',
+        selectionIds: ['sel-ruvimbo-civil'],
+        tags: ['civil', 'construction', 'drainage', 'surveying']
+      },
+      {
+        id: 'img-ruvimbo-2',
+        url: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=800&q=80',
+        caption: 'AutoCAD Civil 3D Cross-Sectional Detailing of Reinforced Concrete Box Culvert',
+        created_at: '2026-04-09',
+        selectionIds: ['sel-ruvimbo-civil', 'sel-ruvimbo-access'],
+        tags: ['cad', 'structural', 'culvert', 'drafting']
+      },
+      {
+        id: 'img-ruvimbo-3',
+        url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80',
+        caption: 'Harare Polytechnic Entrance Ramp & Universal Accessibility Tactile Paving Plan',
+        created_at: '2026-04-13',
+        selectionIds: ['sel-ruvimbo-access'],
+        tags: ['accessibility', 'ramps', 'universal-design', 'harare-poly']
+      }
+    ],
+    journal: {
+      profile: {
+        firstName: 'Ruvimbo',
+        surname: 'Chidzero',
+        age: '25',
+        gender: 'Female',
+        dateOfBirth: '2001-03-22',
+        countryOfResidence: 'Zimbabwe',
+        programmes: [
+          {
+            id: 'prog-ruvimbo-1',
+            degree: 'Higher National Diploma (HND) in Civil Engineering',
+            institution: 'Harare Polytechnic',
+            startYear: '2020',
+            endYear: '2024',
+            description: 'Civil and structural engineering technology, hydraulic structures, soil mechanics, reinforced concrete design, and topographic surveying.'
+          }
+        ],
+        courses: [
+          {
+            id: 'course-ruvimbo-1',
+            name: 'Universal Design & Built Environment Accessibility Standards (ISO 21542)',
+            provider: 'Zimbabwe Institution of Engineers (ZIE)',
+            year: '2024',
+            description: 'Barrier-free architectural drafting, tactile ground surface indicators, and public works accessibility compliance.'
+          }
+        ],
+        myStory: '<p>As a wheelchair user studying Civil Engineering at Harare Polytechnic, I experienced every single day how poor urban design excludes people. From stairs without ramps to open stormwater drains, the built environment often creates unnecessary barriers. I made it my life mission to master civil and structural engineering so I can build roads, drainage channels, and public structures that welcome everyone. My lived experience is my superpower: I design with an uncompromising eye for gradient precision, accessibility, and structural durability.</p>',
+        workExperience: [
+          {
+            id: 'work-ruvimbo-1',
+            title: 'Civil Engineering Technologist',
+            position: 'Junior Civil Engineer',
+            company: 'Chitepo & Associates Civil Consultants',
+            startDate: 'Jan 2024',
+            endDate: 'Present',
+            description: 'Draft structural culvert detail drawings, calculate stormwater runoff coefficients, and conduct universal accessibility compliance audits for municipal and educational clients.'
+          }
+        ],
+        awards: ['Harare Polytechnic Civil Engineering Department Innovation Prize (2024)', 'Zimbabwe Wheelchair Basketball National Team Representative'],
+        sports: ['Wheelchair Basketball', 'Para-athletics (T54 Racing)'],
+        hobbies: ['3D CAD Modeling', 'Accessible Architectural Sketching', 'Youth STEM Mentorship']
+      },
+      entries: [
+        {
+          id: 'journal-ruvimbo-1',
+          title: 'Wheelchair Engineering: Designing What Others Overlook',
+          contentHtml: '<h1>Lived Experience as Engineering Rigor</h1><p>Most able-bodied civil designers treat a 1:12 ramp slope as an abstract code number in a manual. For me, pushing up that slope every day teaches me the exact frictional resistance, handrail diameter comfort, and transition plate smoothness needed. That precision translates into better, safer civil engineering for everyone—from wheelchair users to parents with prams and elderly citizens.</p>',
+          includeInAI: true,
+          createdAt: '2026-04-11T10:00:00Z',
+          updatedAt: '2026-04-11T10:00:00Z'
+        }
+      ],
+      linkedIn: { connected: false }
+    }
+  },
   custom: {
     user: {
       id: 'custom',

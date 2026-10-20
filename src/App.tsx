@@ -126,16 +126,22 @@ export default function App() {
 
   const [vanceState, setVanceState] = useState(() => loadLocalProfileCache('vance', demoProfiles.vance));
   const [chenState, setChenState] = useState(() => loadLocalProfileCache('chen', demoProfiles.chen));
+  const [tendaiState, setTendaiState] = useState(() => loadLocalProfileCache('tendai', demoProfiles.tendai));
+  const [ruvimboState, setRuvimboState] = useState(() => loadLocalProfileCache('ruvimbo', demoProfiles.ruvimbo));
   const [customState, setCustomState] = useState(() => loadLocalProfileCache('custom', demoProfiles.custom));
 
   // Subscribe to Firestore real-time profile snapshots (auto-seeds on first load)
   useEffect(() => {
     const unsubVance = subscribeToProfile('vance', demoProfiles.vance, setVanceState);
     const unsubChen = subscribeToProfile('chen', demoProfiles.chen, setChenState);
+    const unsubTendai = subscribeToProfile('tendai', demoProfiles.tendai, setTendaiState);
+    const unsubRuvimbo = subscribeToProfile('ruvimbo', demoProfiles.ruvimbo, setRuvimboState);
     const unsubCustom = subscribeToProfile('custom', demoProfiles.custom, setCustomState);
     return () => {
       unsubVance();
       unsubChen();
+      unsubTendai();
+      unsubRuvimbo();
       unsubCustom();
     };
   }, []);
@@ -155,6 +161,8 @@ export default function App() {
   const getCurrentState = () => {
     if (activeProfileId === 'vance') return vanceState;
     if (activeProfileId === 'chen') return chenState;
+    if (activeProfileId === 'tendai') return tendaiState;
+    if (activeProfileId === 'ruvimbo') return ruvimboState;
     return customState;
   };
 
@@ -169,6 +177,8 @@ export default function App() {
     };
     if (activeProfileId === 'vance') setVanceState(applyAndPersist('vance'));
     else if (activeProfileId === 'chen') setChenState(applyAndPersist('chen'));
+    else if (activeProfileId === 'tendai') setTendaiState(applyAndPersist('tendai'));
+    else if (activeProfileId === 'ruvimbo') setRuvimboState(applyAndPersist('ruvimbo'));
     else setCustomState(applyAndPersist('custom'));
   };
 
@@ -331,8 +341,17 @@ export default function App() {
   // Switch demo candidates
   const handleToggleProfile = (profileId: string) => {
     setActiveProfileId(profileId);
-    const targetState = profileId === 'vance' ? vanceState : profileId === 'chen' ? chenState : customState;
-    const profileName = targetState?.user?.name || (profileId === 'vance' ? 'Sarah Vance' : profileId === 'chen' ? 'Marcus Chen' : 'Custom Vault');
+    const targetState = 
+      profileId === 'vance' ? vanceState : 
+      profileId === 'chen' ? chenState : 
+      profileId === 'tendai' ? tendaiState : 
+      profileId === 'ruvimbo' ? ruvimboState : customState;
+    const profileName = targetState?.user?.name || (
+      profileId === 'vance' ? 'Sarah Vance' : 
+      profileId === 'chen' ? 'Marcus Chen' : 
+      profileId === 'tendai' ? 'Tendai Moyo' : 
+      profileId === 'ruvimbo' ? 'Ruvimbo Chidzero' : 'Custom Vault'
+    );
     handleAddLog('Profile Swapped', `Clone core values reloaded to represent "${profileName}"`, 'info');
   };
 
@@ -364,7 +383,7 @@ export default function App() {
               <span className="text-[#1E1E24] hidden sm:inline">|</span>
               
               {/* Profile Swapping Pills with responsive touch rail */}
-              <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-[280px] xs:max-w-xs sm:max-w-none no-scrollbar shrink-0">
+              <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-[280px] xs:max-w-xs sm:max-w-md md:max-w-lg lg:max-w-none no-scrollbar shrink-0">
                 <span className="text-white/40 text-[10px] uppercase font-bold mr-1 hidden sm:inline shrink-0">Persona:</span>
                 <button
                   type="button"
@@ -374,7 +393,7 @@ export default function App() {
                       ? 'bg-[#650714] text-white font-semibold shadow-xs'
                       : 'bg-black/40 border border-white/10 text-white/60 hover:text-white'
                   }`}
-                  title="Switch sandbox credentials to Sarah Vance"
+                  title="Switch sandbox credentials to Sarah Vance (Cloud Infrastructure Lead)"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
                   {vanceState.user.name || 'Sarah Vance'}
@@ -387,10 +406,36 @@ export default function App() {
                       ? 'bg-[#650714] text-white font-semibold shadow-xs'
                       : 'bg-black/40 border border-white/10 text-white/60 hover:text-white'
                   }`}
-                  title="Switch sandbox credentials to Marcus Chen"
+                  title="Switch sandbox credentials to Marcus Chen (Design Systems Architect)"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                   {chenState.user.name || 'Marcus Chen'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleProfile('tendai')}
+                  className={`px-3 py-1 rounded-full text-[11px] transition-all font-mono uppercase cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                    activeProfileId === 'tendai'
+                      ? 'bg-[#650714] text-white font-semibold shadow-xs'
+                      : 'bg-black/40 border border-white/10 text-white/60 hover:text-white'
+                  }`}
+                  title="Switch sandbox credentials to Tendai Moyo (Agricultural Economist - Zimbabwe)"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  {tendaiState.user.name || 'Tendai Moyo'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleProfile('ruvimbo')}
+                  className={`px-3 py-1 rounded-full text-[11px] transition-all font-mono uppercase cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                    activeProfileId === 'ruvimbo'
+                      ? 'bg-[#650714] text-white font-semibold shadow-xs'
+                      : 'bg-black/40 border border-white/10 text-white/60 hover:text-white'
+                  }`}
+                  title="Switch sandbox credentials to Ruvimbo Chidzero (Civil & Accessibility Engineering - Harare Poly)"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                  {ruvimboState.user.name || 'Ruvimbo Chidzero'}
                 </button>
                 <button
                   type="button"
